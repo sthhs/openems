@@ -104,7 +104,7 @@ public class MeterCarloGavazziEm300Impl extends AbstractOpenemsModbusComponent
 		}
 
 		return new ModbusProtocol(this, //
-				new FC4ReadInputRegistersTask(300001 - offset, Priority.LOW, //
+				new FC4ReadInputRegistersTask(300001 - offset, Priority.HIGH, //
 						m(ElectricityMeter.ChannelId.VOLTAGE_L1,
 								new SignedDoublewordElement(300001 - offset).wordOrder(WordOrder.LSWMSW),
 								SCALE_FACTOR_2),
@@ -112,10 +112,9 @@ public class MeterCarloGavazziEm300Impl extends AbstractOpenemsModbusComponent
 								new SignedDoublewordElement(300003 - offset).wordOrder(WordOrder.LSWMSW),
 								SCALE_FACTOR_2),
 						m(ElectricityMeter.ChannelId.VOLTAGE_L3,
-								new SignedDoublewordElement(300005 - offset)
-										.wordOrder(WordOrder.LSWMSW),
-								SCALE_FACTOR_2)),
-				new FC4ReadInputRegistersTask(300013 - offset, Priority.HIGH, //
+								new SignedDoublewordElement(300005 - offset).wordOrder(WordOrder.LSWMSW),
+								SCALE_FACTOR_2),
+						new DummyRegisterElement(300007 - offset, 300012 - offset), //
 						m(ElectricityMeter.ChannelId.CURRENT_L1,
 								new SignedDoublewordElement(300013 - offset).wordOrder(WordOrder.LSWMSW),
 								DIRECT_1_TO_1),
