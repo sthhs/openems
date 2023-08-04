@@ -1,5 +1,6 @@
 package io.openems.edge.meter.carlo.gavazzi.em300;
 
+import static io.openems.edge.bridge.modbus.api.ElementToChannelConverter.DIRECT_1_TO_1;
 import static io.openems.edge.bridge.modbus.api.ElementToChannelConverter.SCALE_FACTOR_2;
 import static io.openems.edge.bridge.modbus.api.ElementToChannelConverter.SCALE_FACTOR_MINUS_1_AND_INVERT_IF_TRUE;
 
@@ -103,7 +104,7 @@ public class MeterCarloGavazziEm300Impl extends AbstractOpenemsModbusComponent
 		}
 
 		return new ModbusProtocol(this, //
-				new FC4ReadInputRegistersTask(300001 - offset, Priority.LOW, //
+				new FC4ReadInputRegistersTask(300001 - offset, Priority.HIGH, //
 						m(ElectricityMeter.ChannelId.VOLTAGE_L1,
 								new SignedDoublewordElement(300001 - offset).wordOrder(WordOrder.LSWMSW),
 								SCALE_FACTOR_2),
@@ -111,19 +112,18 @@ public class MeterCarloGavazziEm300Impl extends AbstractOpenemsModbusComponent
 								new SignedDoublewordElement(300003 - offset).wordOrder(WordOrder.LSWMSW),
 								SCALE_FACTOR_2),
 						m(ElectricityMeter.ChannelId.VOLTAGE_L3,
-								new SignedDoublewordElement(300005 - offset)
-										.wordOrder(WordOrder.LSWMSW),
-								SCALE_FACTOR_2)),
-				new FC4ReadInputRegistersTask(300013 - offset, Priority.HIGH, //
+								new SignedDoublewordElement(300005 - offset).wordOrder(WordOrder.LSWMSW),
+								SCALE_FACTOR_2),
+						new DummyRegisterElement(300007 - offset, 300012 - offset), //
 						m(ElectricityMeter.ChannelId.CURRENT_L1,
 								new SignedDoublewordElement(300013 - offset).wordOrder(WordOrder.LSWMSW),
-								SCALE_FACTOR_2),
+								DIRECT_1_TO_1),
 						m(ElectricityMeter.ChannelId.CURRENT_L2,
 								new SignedDoublewordElement(300015 - offset).wordOrder(WordOrder.LSWMSW),
-								SCALE_FACTOR_2),
+								DIRECT_1_TO_1),
 						m(ElectricityMeter.ChannelId.CURRENT_L3,
 								new SignedDoublewordElement(300017 - offset).wordOrder(WordOrder.LSWMSW),
-								SCALE_FACTOR_2),
+								DIRECT_1_TO_1),
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L1,
 								new SignedDoublewordElement(300019 - offset).wordOrder(WordOrder.LSWMSW),
 								SCALE_FACTOR_MINUS_1_AND_INVERT_IF_TRUE(this.config.invert())),
