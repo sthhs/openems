@@ -4,8 +4,6 @@ import static io.openems.edge.evcs.api.Evcs.addCalculatePowerLimitListeners;
 import static io.openems.edge.evcs.api.Evcs.calculateUsedPhasesFromCurrent;
 import static io.openems.edge.meter.api.ElectricityMeter.calculateSumCurrentFromPhases;
 
-import java.util.function.Consumer;
-
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -36,7 +34,6 @@ import io.openems.edge.bridge.modbus.api.element.SignedDoublewordElement;
 import io.openems.edge.bridge.modbus.api.element.SignedWordElement;
 import io.openems.edge.bridge.modbus.api.task.FC16WriteRegistersTask;
 import io.openems.edge.bridge.modbus.api.task.FC3ReadRegistersTask;
-import io.openems.edge.common.channel.value.Value;
 import io.openems.edge.common.component.OpenemsComponent;
 import io.openems.edge.common.event.EdgeEventConstants;
 import io.openems.edge.common.taskmanager.Priority;
@@ -88,6 +85,7 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 		super.setModbus(modbus);
 	}
 
+	private long energyAtStart = 0;
 	private Config config = null;
 
 	public EvcsOpenWBSeries2Impl() {
@@ -143,7 +141,22 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 
 				new FC3ReadRegistersTask(10100, Priority.HIGH,
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER, new SignedDoublewordElement(10100)),
-						m(Evcs.ChannelId.ENERGY_SESSION, new SignedDoublewordElement(10102)), //
+						m(EvcsOpenWBSeries2.ChannelId.CHARGE_ENERGY_SESSION, new SignedDoublewordElement(10102)
+								.onUpdateCallback(e -> {
+									if (e == null) {
+										return;
+									}
+		
+									switch (this.getStatus()) {
+									case NOT_READY_FOR_CHARGING:
+									case STARTING:
+										this.energyAtStart = e;
+									default:
+										break;
+									}
+
+									this._setEnergySession((int) (e - this.energyAtStart));
+								})), //
 						new DummyRegisterElement(10104, 10113),
 						m(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE, new SignedWordElement(10114)),
 						m(EvcsOpenWBSeries2.ChannelId.CHARGING_ACTIVE, new SignedWordElement(10115)),
@@ -152,16 +165,20 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L1, new SignedWordElement(10130)),
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L2, new SignedWordElement(10131)),
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L3, new SignedWordElement(10132)),
-						new DummyRegisterElement(10133, 10140),
-						m(EvcsOpenWBSeries2.ChannelId.CHARGE_ENERGY_SESSION, new SignedDoublewordElement(10141)),
+						new DummyRegisterElement(10133, 10142),
+//						m(EvcsOpenWBSeries2.ChannelId.CHARGE_ENERGY_SESSION, new SignedDoublewordElement(10141)),
+				
+//						m(EvcsOpenWBSeries2.ChannelId.CHARGE_ENERGY_SESSION, new SignedDoublewordElement(10141)),
 						m(EvcsOpenWBSeries2.ChannelId.HARDWARE_TYPE, new SignedWordElement(10143))),
+
+				
 				new FC16WriteRegistersTask(10171,
 						m(EvcsOpenWBSeries2.ChannelId.APPLY_CURRENT_LIMIT, new SignedWordElement(10171)))
 						//m(EvcsOpenWBSeries2.ChannelId.PHASE_TARGET, new SignedWordElement(10180)))
 						);
 
 		this.addStatusCallback();
-		this.addPowerConsumptionCallback();
+		//this.addPowerConsumptionCallback();
 		return modbusProtocol;
 	}
 
@@ -178,7 +195,7 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 
 	@Override
 	public String debugLog() {
-		return "Status: " + getStatus().getName() + " | " + "Charging Power: " + this.channel(EvcsOpenWBSeries2.ChannelId.ACTUAL_CURRENT_CONFIGURED).value().asString();
+		return "Status: " + getStatus().getName() + " | " + "Current: " + this.channel(EvcsOpenWBSeries2.ChannelId.ACTUAL_CURRENT_CONFIGURED).value().asString();
 //		return "Status: " + getStatus().getName() + " | " + "Charging Power: " + getChargePowerTotal();
 	}
 
@@ -266,7 +283,6 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 			this.calculateEnergyL2.update(this.getActivePowerL2Channel().getNextValue().get());
 			this.calculateEnergyL3.update(this.getActivePowerL3Channel().getNextValue().get());
 			break;
-
 		}
 	}
 
@@ -320,14 +336,6 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 			//this._setModbusCommunicationFailed(!this.getLifeBit().isDefined());
 		});
 
-	}
-
-	private void addPowerConsumptionCallback() {
-		final Consumer<Value<Integer>> setEnergyConsumptionCallback = ignore -> {
-			this._setEnergySession(getChargeEnergySession().get());
-		};
-
-		this.getChargeEnergySessionChannel().onUpdate(setEnergyConsumptionCallback);
 	}
 
 	@Override
