@@ -134,50 +134,30 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 
 	@Override
 	protected ModbusProtocol defineModbusProtocol() {
+		
 		final var modbusProtocol = new ModbusProtocol(this,
-				new FC3ReadRegistersTask(10114, Priority.HIGH,
-						m(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE, new SignedWordElement(10114)),
-						m(EvcsOpenWBSeries2.ChannelId.CHARGING_ACTIVE, new SignedWordElement(10115)),
-						m(EvcsOpenWBSeries2.ChannelId.ACTUAL_CURRENT_CONFIGURED, new SignedWordElement(10116))),
-
-			
-
 				new FC3ReadRegistersTask(10107, Priority.LOW,
 						m(ElectricityMeter.ChannelId.CURRENT_L1, new SignedWordElement(10107)),
-
 						m(ElectricityMeter.ChannelId.CURRENT_L2, new SignedWordElement(10108)),
-
 						m(ElectricityMeter.ChannelId.CURRENT_L3, new SignedWordElement(10109))),
 
 				new FC3ReadRegistersTask(10100, Priority.HIGH,
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER, new SignedDoublewordElement(10100)),
-
 						m(Evcs.ChannelId.ENERGY_SESSION, new SignedDoublewordElement(10102)), //
-
-						//m(ElectricityMeter.ChannelId.ACTIVE_CONSUMPTION_ENERGY, new SignedDoublewordElement(10102)),
-						// TODO whats the difference between 1020 and 1022?
-						new DummyRegisterElement(10104, 10129),
-
+						new DummyRegisterElement(10104, 10113),
+						m(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE, new SignedWordElement(10114)),
+						m(EvcsOpenWBSeries2.ChannelId.CHARGING_ACTIVE, new SignedWordElement(10115)),
+						m(EvcsOpenWBSeries2.ChannelId.ACTUAL_CURRENT_CONFIGURED, new SignedWordElement(10116)),
+						new DummyRegisterElement(10117, 10129),
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L1, new SignedWordElement(10130)),
-
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L2, new SignedWordElement(10131)),
-
-						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L3, new SignedWordElement(10132))),
-
-
-				new FC3ReadRegistersTask(10141, Priority.HIGH,
-						m(EvcsOpenWBSeries2.ChannelId.CHARGE_ENERGY_SESSION, new SignedDoublewordElement(10141))),
-
+						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L3, new SignedWordElement(10132)),
+						new DummyRegisterElement(10133, 10140),
+						m(EvcsOpenWBSeries2.ChannelId.CHARGE_ENERGY_SESSION, new SignedDoublewordElement(10141)),
+						m(EvcsOpenWBSeries2.ChannelId.HARDWARE_TYPE, new SignedWordElement(10143))),
 				new FC16WriteRegistersTask(10171,
 						m(EvcsOpenWBSeries2.ChannelId.APPLY_CURRENT_LIMIT, new SignedWordElement(10171)))
-
-/*
-				new FC3ReadRegistersTask(6000, Priority.LOW,
-						m(EvcsOpenWBSeries2.ChannelId.LIFE_BIT, new SignedWordElement(6000))),
-
-				new FC6WriteRegisterTask(6000,
-						m(EvcsOpenWBSeries2.ChannelId.LIFE_BIT, new SignedWordElement(6000)))
-						*/
+						//m(EvcsOpenWBSeries2.ChannelId.PHASE_TARGET, new SignedWordElement(10180)))
 						);
 
 		this.addStatusCallback();
@@ -229,14 +209,6 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 		return this.config.debugMode();
 	}
 
-	/*
-	 * 	@Override
-
-	 
-		setApplyChargePowerLimit(power);
-		return true;
-	}
-	*/
 	
 	@Override
 	public boolean applyChargePowerLimit(int power) throws Exception {
@@ -244,13 +216,11 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 			return false;
 		}
 		var phases = this.getPhasesAsInt();
-		var current = Math.round(power / phases / Evcs.DEFAULT_VOLTAGE);
-
-		/*
-		 * Limits the charging value because Mennekes knows only values between 6 and 32
-		 * A
-		 */
-		current = Math.min(current, Evcs.DEFAULT_MAXIMUM_HARDWARE_CURRENT / 1000);
+		double current =  ((double) power / (double) phases / (double) Evcs.DEFAULT_VOLTAGE);
+		
+		if (current > Evcs.DEFAULT_MAXIMUM_HARDWARE_CURRENT / 1000) {
+			current = 0;
+		}
 
 		if (current < Evcs.DEFAULT_MINIMUM_HARDWARE_CURRENT / 1000) {
 			current = 0;
@@ -263,7 +233,6 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 
 	@Override
 	public boolean pauseChargeProcess() throws Exception {
-		//this.applyChargePowerLimit(0);
 		this.setApplyCurrentLimit(0);
 		return true;
 	}
@@ -317,26 +286,26 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 	private void addStatusCallback() {
 		this.channel(EvcsOpenWBSeries2.ChannelId.CHARGING_ACTIVE).onSetNextValue(s -> {
 
-			PluggedState plugged = this.channel(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE).value().asEnum();
+			OpenWBEnums.PluggedState plugged = this.channel(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE).value().asEnum();
 			
-			ChargingActiveState state = s.asEnum();
+			OpenWBEnums.ChargingActiveState state = s.asEnum();
 
 			/**
 			 * Maps the EVCS state to a {@link Status}.
 			 */
 			switch (state) {
-			case NOT_CHARGING -> this._setStatus((plugged == PluggedState.VEHICLE_ATTACHED ) ?  Status.READY_FOR_CHARGING : Status.NOT_READY_FOR_CHARGING);
+			case NOT_CHARGING -> this._setStatus((plugged == OpenWBEnums.PluggedState.VEHICLE_ATTACHED ) ?  Status.READY_FOR_CHARGING : Status.NOT_READY_FOR_CHARGING);
 			case CHARGING -> this._setStatus(Status.CHARGING);//, CHARGING_STATION_RESERVED, CHARGING_PAUSED
 			default -> this._setStatus(Status.UNDEFINED);
 			}
 
-			this._setModbusCommunicationFailed(!this.getLifeBit().isDefined());
+			//this._setModbusCommunicationFailed(!this.getLifeBit().isDefined());
 		});
 		
 		this.channel(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE).onSetNextValue(s -> {
-			ChargingActiveState state = this.channel(EvcsOpenWBSeries2.ChannelId.CHARGING_ACTIVE).value().asEnum();
+			OpenWBEnums.ChargingActiveState state = this.channel(EvcsOpenWBSeries2.ChannelId.CHARGING_ACTIVE).value().asEnum();
 
-			PluggedState plugged = s.asEnum();
+			OpenWBEnums.PluggedState plugged = s.asEnum();
 
 			/**
 			 * Maps the EVCS state to a {@link Status}.
@@ -344,11 +313,11 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 			switch (plugged) {
 			case NO_VEHICLE_ATTACHED -> this._setStatus(Status.NOT_READY_FOR_CHARGING);
 			
-			case VEHICLE_ATTACHED -> this._setStatus((state == ChargingActiveState.CHARGING) ? Status.CHARGING : Status.READY_FOR_CHARGING);//, CHARGING_STATION_RESERVED, CHARGING_PAUSED
+			case VEHICLE_ATTACHED -> this._setStatus((state == OpenWBEnums.ChargingActiveState.CHARGING) ? Status.CHARGING : Status.READY_FOR_CHARGING);//, CHARGING_STATION_RESERVED, CHARGING_PAUSED
 			default -> this._setStatus(Status.UNDEFINED);
 			}
 
-			this._setModbusCommunicationFailed(!this.getLifeBit().isDefined());
+			//this._setModbusCommunicationFailed(!this.getLifeBit().isDefined());
 		});
 
 	}

@@ -16,69 +16,43 @@ public interface EvcsOpenWBSeries2 extends OpenemsComponent {
 
 		/* Integration of Modbus register set: TQ-DM100 */
 
-		EVSE_STATE(Doc.of(EvseState.values()) //
-				.accessMode(AccessMode.READ_ONLY) //
-				.text("State of the charging station")),
-
-		PLUGGED_STATE(Doc.of(PluggedState.values()) //
+		PLUGGED_STATE(Doc.of(OpenWBEnums.PluggedState.values()) //
 				.accessMode(AccessMode.READ_ONLY) //
 				.text("State of the cable socket connection")),
 
-		CHARGING_ACTIVE(Doc.of(ChargingActiveState.values()) //
+		CHARGING_ACTIVE(Doc.of(OpenWBEnums.ChargingActiveState.values()) //
 				.accessMode(AccessMode.READ_ONLY) //
 				.text("State of the charging device")),
-
-		LIFE_BIT(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.NONE).accessMode(AccessMode.READ_WRITE) //
-				.text("Heartbeat toggle bit")),
-
-		MIN_HARDWARE_CURRENT(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.AMPERE).accessMode(AccessMode.READ_ONLY) //
-				.text("Minimum charging current of the hardware")),
-
-		MAX_HARDWARE_CURRENT(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.AMPERE).accessMode(AccessMode.READ_ONLY) //
-				.text("Maximal charging current of the hardware")),
-
-		CHARGE_SAVE_CURRENT_LIMIT(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.AMPERE).accessMode(AccessMode.READ_WRITE) //
-				.text("Maximum charging current under communication failure")),
-
-		CHARGE_START_TIME(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.NONE).accessMode(AccessMode.READ_ONLY) //
-				.text("Start time of charging process")),
-
-		CHARGE_STOP_TIME(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.NONE).accessMode(AccessMode.READ_ONLY) //
-				.text("Stop time of charging process")),
-
-		CHARGE_DURATION_SESSION(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.SECONDS) //
-				.text("Duration of the current session in Wh")),
 
 		CHARGE_ENERGY_SESSION(Doc.of(OpenemsType.INTEGER) //
 				.unit(Unit.CUMULATED_WATT_HOURS) //
 				.text("Sum of charged energy for the current session in Wh")),
 
-		CHARGE_SIGNALED_CURRENT(Doc.of(OpenemsType.INTEGER) //
-				.accessMode(AccessMode.READ_ONLY) //
-				.text("Maximum current signaled to the EV for charging")),
+		ACTUAL_CURRENT_CONFIGURED(Doc.of(OpenemsType.INTEGER) //
+				.unit(Unit.AMPERE) //
+				.text("Configured current")),
 
-		POWER_TOTAL(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.WATT).accessMode(AccessMode.READ_ONLY) //
-				.text("Sum of active charging power")),
-
-		APPLY_CHARGE_POWER_LIMIT(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.WATT).accessMode(AccessMode.WRITE_ONLY) //
-				.text("Maximum charging power limit")),
+		HARDWARE_TYPE(Doc.of(OpenWBEnums.HardwareType.values()) //
+				.text("1 = series2, 2 = Pro")),
 
 		APPLY_CURRENT_LIMIT(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.AMPERE).accessMode(AccessMode.READ_WRITE) //
+				.unit(Unit.AMPERE).accessMode(AccessMode.WRITE_ONLY) //
 				.text("Maximum charging current limit")),
 
-		ACTUAL_CURRENT_CONFIGURED(Doc.of(OpenemsType.INTEGER) //
-				.unit(Unit.AMPERE).accessMode(AccessMode.READ_WRITE) //
-				.text("Configured current")),;
+		PHASE_TARGET(Doc.of(OpenemsType.INTEGER) //
+				.accessMode(AccessMode.WRITE_ONLY) //
+				.text("Trigger phase Switch, 1 = one Phase or 3 = three Phase")),
+
+		TRIGGER_PHASE_SWITCHING(Doc.of(OpenemsType.INTEGER) //
+				.accessMode(AccessMode.WRITE_ONLY) //
+				.text("1 = trigger Phase switching")),
+		
+		HEARTBEAT(Doc.of(OpenemsType.INTEGER) //
+				.unit(Unit.AMPERE).accessMode(AccessMode.WRITE_ONLY) //
+				.text("Configure Heartbeat, 0 = deactivated or 1 = activated. If heartbeat is\n"
+						+ "enabled every read through modbus resets the heartbeat counter. If the\n"
+						+ "counter is above 60 seconds the charging (if active) will be stopped.")),
+		;
 
 		private final Doc doc;
 
@@ -108,47 +82,8 @@ public interface EvcsOpenWBSeries2 extends OpenemsComponent {
 	 * @param value the next value
 	 * @throws OpenemsNamedException on error
 	 */
-	public default void setApplyCurrentLimit(Integer value) throws OpenemsNamedException {
-		this.getApplyCurrentLimitChannel().setNextWriteValue(value * 100);//cA
-	}
-
-	/**
-	 * Gets the Channel for {@link ChannelId#APPLY_CHARGE_POWER_LIMIT}.
-	 *
-	 * @return the Channel
-	 */
-	public default IntegerWriteChannel getApplyChargePowerLimitChannel() {
-		return this.channel(ChannelId.APPLY_CHARGE_POWER_LIMIT);
-	}
-
-	/**
-	 * Sets the charge power limit of the EVCS in [W] on
-	 * {@link ChannelId#APPLY_CHARGE_POWER_LIMIT} Channel.
-	 *
-	 * @param value the next value
-	 * @throws OpenemsNamedException on error
-	 */
-	public default void setApplyChargePowerLimit(Integer value) throws OpenemsNamedException {
-		this.getApplyChargePowerLimitChannel().setNextWriteValue(value);
-			}
-
-	/**
-	 * Gets the Channel for {@link ChannelId#POWER_TOTAL}.
-	 *
-	 * @return the Channel
-	 */
-	public default Channel<Integer> getChargePowerTotalChannel() {
-		return this.channel(ChannelId.POWER_TOTAL);
-	}
-
-	/**
-	 * Gets the total charge power on all phases in [W]. See
-	 * {@link ChannelId#POWER_TOTAL}.
-	 *
-	 * @return the Channel {@link Value}
-	 */
-	public default Value<Integer> getChargePowerTotal() {
-		return this.getChargePowerTotalChannel().value();
+	public default void setApplyCurrentLimit(double value) throws OpenemsNamedException {
+		this.getApplyCurrentLimitChannel().setNextWriteValue((int) (value * 100));//cA
 	}
 
 	/**
@@ -170,31 +105,4 @@ public interface EvcsOpenWBSeries2 extends OpenemsComponent {
 		return this.getChargeEnergySessionChannel().value();
 	}
 
-	/**
-	 * Gets the Channel for {@link ChannelId#LIFE_BIT}.
-	 *
-	 * @return the Channel
-	 */
-	public default IntegerWriteChannel getLifeBitChannel() {
-		return this.channel(ChannelId.LIFE_BIT);
-	}
-
-	/**
-	 * Gets the Life-Bit. See {@link ChannelId#LIFE_BIT}.
-	 *
-	 * @return the Channel {@link Value}
-	 */
-	public default Value<Integer> getLifeBit() {
-		return this.getLifeBitChannel().value();
-	}
-
-	/**
-	 * Sets Life-Bit. See {@link ChannelId#LIFE_BIT}.
-	 * 
-	 * @param value {@link Integer}
-	 * @throws OpenemsNamedException on error.
-	 */
-	public default void setLifeBit(Integer value) throws OpenemsNamedException {
-		this.getLifeBitChannel().setNextWriteValue(value);
-	}
 }
