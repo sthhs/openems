@@ -4,8 +4,8 @@ import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
 @ObjectClassDefinition(//
-		name = "EVCS Spelsberg SMART", //
-		description = "Implements the Spelsberg SMART electric vehicle charging station")
+		name = "EVCS OpenWB Series2", //
+		description = "Implements the OpenWB Series2 electric vehicle charging station")
 @interface Config {
 
 	@AttributeDefinition(name = "Component-ID", description = "Unique ID of this Component")
@@ -35,5 +35,5 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 	@AttributeDefinition(name = "Maximum hardware current", description = "Maximum current of the Charger in mA.", required = true)
 	int maxHwCurrent() default 32000;
 
-	String webconsole_configurationFactory_nameHint() default "EVCS Spelsberg SMART [{id}]";
+	String webconsole_configurationFactory_nameHint() default "EVCS OpenWB Series2 [{id}]";
 }
