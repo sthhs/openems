@@ -178,7 +178,6 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 						);
 
 		this.addStatusCallback();
-		//this.addPowerConsumptionCallback();
 		return modbusProtocol;
 	}
 
@@ -196,7 +195,6 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 	@Override
 	public String debugLog() {
 		return "Status: " + getStatus().getName() + " | " + "Current: " + this.channel(EvcsOpenWBSeries2.ChannelId.ACTUAL_CURRENT_CONFIGURED).value().asString();
-//		return "Status: " + getStatus().getName() + " | " + "Charging Power: " + getChargePowerTotal();
 	}
 
 	@Override

@@ -4,17 +4,15 @@ import io.openems.common.channel.AccessMode;
 import io.openems.common.channel.Unit;
 import io.openems.common.exceptions.OpenemsError.OpenemsNamedException;
 import io.openems.common.types.OpenemsType;
-import io.openems.edge.common.channel.Channel;
 import io.openems.edge.common.channel.Doc;
 import io.openems.edge.common.channel.IntegerWriteChannel;
-import io.openems.edge.common.channel.value.Value;
 import io.openems.edge.common.component.OpenemsComponent;
 
 public interface EvcsOpenWBSeries2 extends OpenemsComponent {
 
 	public enum ChannelId implements io.openems.edge.common.channel.ChannelId {
 
-		/* Integration of Modbus register set: TQ-DM100 */
+		/* Integration of Modbus register set: https://openwb.de/main/wp-content/uploads/2023/10/ModbusTCP-openWB-series2-Pro-1.pdf*/
 
 		PLUGGED_STATE(Doc.of(OpenWBEnums.PluggedState.values()) //
 				.accessMode(AccessMode.READ_ONLY) //
@@ -84,25 +82,6 @@ public interface EvcsOpenWBSeries2 extends OpenemsComponent {
 	 */
 	public default void setApplyCurrentLimit(double value) throws OpenemsNamedException {
 		this.getApplyCurrentLimitChannel().setNextWriteValue((int) (value * 100));//cA
-	}
-
-	/**
-	 * Gets the Channel for {@link ChannelId#CHARGE_ENERGY_SESSION}.
-	 *
-	 * @return the Channel
-	 */
-	public default Channel<Integer> getChargeEnergySessionChannel() {
-		return this.channel(ChannelId.CHARGE_ENERGY_SESSION);
-	}
-
-	/**
-	 * Gets sum of charged energy for the current session. See
-	 * {@link ChannelId#CHARGE_ENERGY_SESSION}.
-	 *
-	 * @return the Channel {@link Value}
-	 */
-	public default Value<Integer> getChargeEnergySession() {
-		return this.getChargeEnergySessionChannel().value();
 	}
 
 }
