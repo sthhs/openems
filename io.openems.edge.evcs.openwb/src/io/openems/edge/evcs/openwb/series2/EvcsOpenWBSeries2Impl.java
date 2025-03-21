@@ -33,7 +33,7 @@ import io.openems.edge.bridge.modbus.api.element.DummyRegisterElement;
 import io.openems.edge.bridge.modbus.api.element.SignedDoublewordElement;
 import io.openems.edge.bridge.modbus.api.element.SignedWordElement;
 import io.openems.edge.bridge.modbus.api.task.FC16WriteRegistersTask;
-import io.openems.edge.bridge.modbus.api.task.FC3ReadRegistersTask;
+import io.openems.edge.bridge.modbus.api.task.FC4ReadInputRegistersTask;
 import io.openems.edge.common.component.OpenemsComponent;
 import io.openems.edge.common.event.EdgeEventConstants;
 import io.openems.edge.common.taskmanager.Priority;
@@ -85,7 +85,7 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 		super.setModbus(modbus);
 	}
 
-	private long energyAtStart = 0;
+	private long sessionStartEnergy = 0;
 	private Config config = null;
 
 	public EvcsOpenWBSeries2Impl() {
@@ -134,30 +134,71 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 	protected ModbusProtocol defineModbusProtocol() {
 		
 		final var modbusProtocol = new ModbusProtocol(this,
-				new FC3ReadRegistersTask(10107, Priority.LOW,
-						m(ElectricityMeter.ChannelId.CURRENT_L1, new SignedWordElement(10107)),
-						m(ElectricityMeter.ChannelId.CURRENT_L2, new SignedWordElement(10108)),
-						m(ElectricityMeter.ChannelId.CURRENT_L3, new SignedWordElement(10109))),
-
-				new FC3ReadRegistersTask(10100, Priority.HIGH,
+				new FC4ReadInputRegistersTask(10100, Priority.HIGH,
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER, new SignedDoublewordElement(10100)),
 						m(EvcsOpenWBSeries2.ChannelId.CHARGE_ENERGY_SESSION, new SignedDoublewordElement(10102)
-								.onUpdateCallback(e -> {
-									if (e == null) {
+								.onUpdateCallback(totalEnergy -> {
+									if (totalEnergy == null) {
 										return;
 									}
 		
 									switch (this.getStatus()) {
 									case NOT_READY_FOR_CHARGING:
 									case STARTING:
-										this.energyAtStart = e;
+										this.sessionStartEnergy = totalEnergy;
 									default:
 										break;
 									}
 
-									this._setEnergySession((int) (e - this.energyAtStart));
-								})), //
-						new DummyRegisterElement(10104, 10113),
+									this._setEnergySession((int) Math.max(0, totalEnergy - this.sessionStartEnergy));
+								}))), //
+
+				new FC4ReadInputRegistersTask(10104, Priority.LOW,
+						//Voltages and currents are sent as cV (Centivolts) and have to be converted to Millivolts
+						m(ElectricityMeter.ChannelId.VOLTAGE_L1, new SignedWordElement(10104)
+								.onUpdateCallback(voltage -> {
+									if (voltage == null) {
+										return;
+									}
+									this._setVoltageL1(voltage * 10);
+								})),
+						m(ElectricityMeter.ChannelId.VOLTAGE_L2, new SignedWordElement(10105)
+								.onUpdateCallback(voltage -> {
+									if (voltage == null) {
+										return;
+									}
+									this._setVoltageL2(voltage * 10);
+								})),
+						m(ElectricityMeter.ChannelId.VOLTAGE_L3, new SignedWordElement(10106)
+								.onUpdateCallback(voltage -> {
+									if (voltage == null) {
+										return;
+									}
+									this._setVoltageL3(voltage * 10);
+								})),
+						m(ElectricityMeter.ChannelId.CURRENT_L1, new SignedWordElement(10107)
+								.onUpdateCallback(current -> {
+									if (current == null) {
+										return;
+									}
+									this._setCurrentL1(current * 10);
+								})),
+						m(ElectricityMeter.ChannelId.CURRENT_L2, new SignedWordElement(10108)
+								.onUpdateCallback(current -> {
+									if (current == null) {
+										return;
+									}
+									this._setCurrentL2(current * 10);
+								})),
+						m(ElectricityMeter.ChannelId.CURRENT_L3, new SignedWordElement(10109)
+								.onUpdateCallback(current -> {
+									if (current == null) {
+										return;
+									}
+									this._setCurrentL3(current * 10);
+								}))),
+
+				new FC4ReadInputRegistersTask(10114, Priority.HIGH,						
 						m(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE, new SignedWordElement(10114)),
 						m(EvcsOpenWBSeries2.ChannelId.CHARGING_ACTIVE, new SignedWordElement(10115)),
 						m(EvcsOpenWBSeries2.ChannelId.ACTUAL_CURRENT_CONFIGURED, new SignedWordElement(10116)),
@@ -166,19 +207,14 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L2, new SignedWordElement(10131)),
 						m(ElectricityMeter.ChannelId.ACTIVE_POWER_L3, new SignedWordElement(10132)),
 						new DummyRegisterElement(10133, 10142),
-//						m(EvcsOpenWBSeries2.ChannelId.CHARGE_ENERGY_SESSION, new SignedDoublewordElement(10141)),
-				
-//						m(EvcsOpenWBSeries2.ChannelId.CHARGE_ENERGY_SESSION, new SignedDoublewordElement(10141)),
 						m(EvcsOpenWBSeries2.ChannelId.HARDWARE_TYPE, new SignedWordElement(10143))),
 
-				
 				new FC16WriteRegistersTask(10171,
 						m(EvcsOpenWBSeries2.ChannelId.APPLY_CURRENT_LIMIT, new SignedWordElement(10171)))
 						//m(EvcsOpenWBSeries2.ChannelId.PHASE_TARGET, new SignedWordElement(10180)))
 						);
 
 		this.addStatusCallback();
-		//this.addPowerConsumptionCallback();
 		return modbusProtocol;
 	}
 
@@ -196,7 +232,6 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 	@Override
 	public String debugLog() {
 		return "Status: " + getStatus().getName() + " | " + "Current: " + this.channel(EvcsOpenWBSeries2.ChannelId.ACTUAL_CURRENT_CONFIGURED).value().asString();
-//		return "Status: " + getStatus().getName() + " | " + "Charging Power: " + getChargePowerTotal();
 	}
 
 	@Override
@@ -301,30 +336,25 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 
 	private void addStatusCallback() {
 		this.channel(EvcsOpenWBSeries2.ChannelId.CHARGING_ACTIVE).onSetNextValue(s -> {
-
 			OpenWBEnums.PluggedState plugged = this.channel(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE).value().asEnum();
-			
 			OpenWBEnums.ChargingActiveState state = s.asEnum();
 
 			/**
-			 * Maps the EVCS state to a {@link Status}.
+			 * Maps the CHARGING_ACTIVE state to a {@link Status}.
 			 */
 			switch (state) {
 			case NOT_CHARGING -> this._setStatus((plugged == OpenWBEnums.PluggedState.VEHICLE_ATTACHED ) ?  Status.READY_FOR_CHARGING : Status.NOT_READY_FOR_CHARGING);
 			case CHARGING -> this._setStatus(Status.CHARGING);//, CHARGING_STATION_RESERVED, CHARGING_PAUSED
 			default -> this._setStatus(Status.UNDEFINED);
 			}
-
-			//this._setModbusCommunicationFailed(!this.getLifeBit().isDefined());
 		});
 		
 		this.channel(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE).onSetNextValue(s -> {
 			OpenWBEnums.ChargingActiveState state = this.channel(EvcsOpenWBSeries2.ChannelId.CHARGING_ACTIVE).value().asEnum();
-
 			OpenWBEnums.PluggedState plugged = s.asEnum();
 
 			/**
-			 * Maps the EVCS state to a {@link Status}.
+			 * Maps the PLUGGED_STATE to a {@link Status}.
 			 */
 			switch (plugged) {
 			case NO_VEHICLE_ATTACHED -> this._setStatus(Status.NOT_READY_FOR_CHARGING);
@@ -332,10 +362,7 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 			case VEHICLE_ATTACHED -> this._setStatus((state == OpenWBEnums.ChargingActiveState.CHARGING) ? Status.CHARGING : Status.READY_FOR_CHARGING);//, CHARGING_STATION_RESERVED, CHARGING_PAUSED
 			default -> this._setStatus(Status.UNDEFINED);
 			}
-
-			//this._setModbusCommunicationFailed(!this.getLifeBit().isDefined());
 		});
-
 	}
 
 	@Override
