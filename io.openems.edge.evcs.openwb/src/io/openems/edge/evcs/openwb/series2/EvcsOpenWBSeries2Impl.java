@@ -33,7 +33,6 @@ import io.openems.edge.bridge.modbus.api.element.DummyRegisterElement;
 import io.openems.edge.bridge.modbus.api.element.SignedDoublewordElement;
 import io.openems.edge.bridge.modbus.api.element.SignedWordElement;
 import io.openems.edge.bridge.modbus.api.task.FC16WriteRegistersTask;
-import io.openems.edge.bridge.modbus.api.task.FC3ReadRegistersTask;
 import io.openems.edge.bridge.modbus.api.task.FC4ReadInputRegistersTask;
 import io.openems.edge.common.component.OpenemsComponent;
 import io.openems.edge.common.event.EdgeEventConstants;
@@ -155,12 +154,49 @@ public class EvcsOpenWBSeries2Impl extends AbstractOpenemsModbusComponent implem
 								}))), //
 
 				new FC4ReadInputRegistersTask(10104, Priority.LOW,
-						m(ElectricityMeter.ChannelId.VOLTAGE_L1, new SignedWordElement(10104)),
-						m(ElectricityMeter.ChannelId.VOLTAGE_L2, new SignedWordElement(10105)),
-						m(ElectricityMeter.ChannelId.VOLTAGE_L3, new SignedWordElement(10106)),
-						m(ElectricityMeter.ChannelId.CURRENT_L1, new SignedWordElement(10107)),
-						m(ElectricityMeter.ChannelId.CURRENT_L2, new SignedWordElement(10108)),
-						m(ElectricityMeter.ChannelId.CURRENT_L3, new SignedWordElement(10109))),
+						//Voltages and currents are sent as cV (Centivolts) and have to be converted to Millivolts
+						m(ElectricityMeter.ChannelId.VOLTAGE_L1, new SignedWordElement(10104)
+								.onUpdateCallback(voltage -> {
+									if (voltage == null) {
+										return;
+									}
+									this._setVoltageL1(voltage * 10);
+								})),
+						m(ElectricityMeter.ChannelId.VOLTAGE_L2, new SignedWordElement(10105)
+								.onUpdateCallback(voltage -> {
+									if (voltage == null) {
+										return;
+									}
+									this._setVoltageL2(voltage * 10);
+								})),
+						m(ElectricityMeter.ChannelId.VOLTAGE_L3, new SignedWordElement(10106)
+								.onUpdateCallback(voltage -> {
+									if (voltage == null) {
+										return;
+									}
+									this._setVoltageL3(voltage * 10);
+								})),
+						m(ElectricityMeter.ChannelId.CURRENT_L1, new SignedWordElement(10107)
+								.onUpdateCallback(current -> {
+									if (current == null) {
+										return;
+									}
+									this._setCurrentL1(current * 10);
+								})),
+						m(ElectricityMeter.ChannelId.CURRENT_L2, new SignedWordElement(10108)
+								.onUpdateCallback(current -> {
+									if (current == null) {
+										return;
+									}
+									this._setCurrentL2(current * 10);
+								})),
+						m(ElectricityMeter.ChannelId.CURRENT_L3, new SignedWordElement(10109)
+								.onUpdateCallback(current -> {
+									if (current == null) {
+										return;
+									}
+									this._setCurrentL3(current * 10);
+								}))),
 
 				new FC4ReadInputRegistersTask(10114, Priority.HIGH,						
 						m(EvcsOpenWBSeries2.ChannelId.PLUGGED_STATE, new SignedWordElement(10114)),
