@@ -412,7 +412,7 @@ public enum Unit {
 	 */
 	public static Unit fromSymbolOrElse(String symbol, Unit defaultUnit) {
 		return Stream.of(Unit.values()) //
-				.filter(u -> u.symbol == symbol) //
+				.filter(u -> u.symbol.equals(symbol)) //
 				.findFirst() //
 				.orElse(defaultUnit);
 	}
