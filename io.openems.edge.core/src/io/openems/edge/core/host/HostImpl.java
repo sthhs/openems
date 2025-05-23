@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
@@ -78,9 +76,16 @@ public class HostImpl extends AbstractOpenemsComponent implements Host, OpenemsC
 				OpenemsComponent.ChannelId.values(), //
 				Host.ChannelId.values() //
 		);
-		
+
 		// Initialize correct Operating System handler
-		this.operatingSystem = this.getCurrentOS();
+		if (System.getProperty("os.name").startsWith("Windows")) {
+			this.operatingSystem = new OperatingSystemWindows();
+		} else if (System.getProperty("os.name").startsWith("Mac")) {
+			this.operatingSystem = new OperatingSystemMac();
+		} else {
+			this.operatingSystem = new OperatingSystemDebianSystemd(this);
+		}
+
 		this.diskSpaceWorker = new DiskSpaceWorker(this);
 		this.networkConfigurationWorker = new NetworkConfigurationWorker(this);
 		this.usbConfigurationWorker = new UsbConfigurationWorker(this);
@@ -315,22 +320,6 @@ public class HostImpl extends AbstractOpenemsComponent implements Host, OpenemsC
 		try (var s = new Scanner(process.getInputStream()).useDelimiter("\\A")) {
 			return s.hasNext() ? s.next().trim() : "";
 		}
-	}
-	
-	private OperatingSystem getCurrentOS() {
-		if (Files.exists(Paths.get("/.dockerenv"))) {
-			return new OperatingSystemDocker();
-		}
-		
-		final String osName = System.getProperty("os.name");
-
-        if (osName.startsWith("Windows")) {
-            return new OperatingSystemWindows();
-        } else if (osName.startsWith("Mac")) {
-            return new OperatingSystemMac();
-        }
-		
-		return new OperatingSystemDebianSystemd(this);
 	}
 
 }

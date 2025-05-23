@@ -128,9 +128,7 @@ public class UserServiceImpl implements UserService {
 		this.users.clear();
 		this.usersFromConfig.clear();
 
-		this.users.add(//
-				new ManagedUser("admin", "Admin", Language.DEFAULT, Role.ADMIN, config.adminPassword(),
-						config.adminSalt()));
+		this.initializeUser("admin", "Admin", Language.DEFAULT, Role.ADMIN, config.adminPassword(), config.adminSalt());
 		this.users.add(//
 				new ManagedUser("installer", "Installer", Language.DEFAULT, Role.INSTALLER, config.installerPassword(),
 						config.installerSalt()));
@@ -207,6 +205,38 @@ public class UserServiceImpl implements UserService {
 		this.usersFromConfig.add(
 				new UserConfig(username, username, user.getLanguage(), user.getRole(), passwordEncoded, saltEncoded));
 		this.saveUsers();
+	}
+
+	/**
+	 * Initializes the User; makes sure there is a safe password in case the
+	 * password is the same as the role.
+	 * 
+	 * @param id       the user id, e.g. "admin"
+	 * @param name     a user name, e.g#. "Admin"
+	 * @param language the {@link Language}
+	 * @param role     the user {@link Role}
+	 * @param password the base64 hashed password
+	 * @param salt     the base64 hashed salt
+	 */
+	private void initializeUser(String id, String name, Language language, Role role, String password, String salt) {
+		if (
+		// Is this a FEMS (i.e. no development environment)?
+		this.host.getHostname().orElse(//
+				this.host.getHostnameChannel().getNextValue().orElse(//
+						"UNKNOWN"))
+				.startsWith("fems")
+				// Does the password match the id (i.e. the password is insecure)?
+				&& ManagedUser.validatePassword(password, salt, role.toString().toLowerCase())) {
+			// -> yes. Replace with generated password.
+			byte[] generatedSalt = UserServiceUtils.generateSalt(this.host, id);
+			byte[] generatedPassword = ManagedUser.hashPassword(UserServiceUtils.generatePassword(this.host, id, role),
+					generatedSalt, ManagedUser.ITERATIONS, ManagedUser.KEY_LENGTH);
+			this.users.add(//
+					new ManagedUser(id, name, language, role, generatedPassword, generatedSalt));
+		} else {
+			this.users.add(//
+					new ManagedUser(id, name, language, role, password, salt));
+		}
 	}
 
 	private static byte[] getRandomSalt(int length) {
