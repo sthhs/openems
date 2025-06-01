@@ -10,15 +10,24 @@ import static io.openems.edge.evse.api.chargepoint.Mode.Actual.FORCE;
 import static io.openems.edge.evse.api.chargepoint.Mode.Actual.MINIMUM;
 import static io.openems.edge.evse.api.chargepoint.Mode.Actual.SURPLUS;
 import static io.openems.edge.evse.api.chargepoint.Mode.Actual.ZERO;
+import static io.openems.edge.evse.api.chargepoint.Profile.ApplySetPoint.Ability.AMPERE;
+import static io.openems.edge.evse.api.chargepoint.Profile.ApplySetPoint.Ability.MILLI_AMPERE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
+<<<<<<< HEAD
 
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 
+=======
+import java.util.function.Consumer;
+
+import org.junit.Test;
+
+>>>>>>> develop
 import io.openems.edge.common.sum.DummySum;
 import io.openems.edge.controller.evse.cluster.Utils.Input;
 import io.openems.edge.controller.evse.single.Params;
@@ -27,7 +36,11 @@ import io.openems.edge.controller.evse.test.DummyControllerEvseSingle;
 import io.openems.edge.evse.api.Limit;
 import io.openems.edge.evse.api.SingleThreePhase;
 import io.openems.edge.evse.api.chargepoint.Mode;
+<<<<<<< HEAD
 import io.openems.edge.evse.api.chargepoint.Profile;
+=======
+import io.openems.edge.evse.api.chargepoint.Profile.ChargePointAbilities;
+>>>>>>> develop
 
 public class UtilsTest {
 
@@ -39,7 +52,11 @@ public class UtilsTest {
 			.setLimit(THREE_PHASE, 6000, 16000) //
 			.setHysteresis(INACTIVE) //
 			.setAppearsToBeFullyCharged(false) //
+<<<<<<< HEAD
 			.setProfiles(ImmutableList.of()) //
+=======
+			.setAbilities(a -> a.applySetPointIn(MILLI_AMPERE)) //
+>>>>>>> develop
 			.build();
 	private static final Input CTRL1 = InputBuilder.create() //
 			.setId("evse1") //
@@ -49,7 +66,11 @@ public class UtilsTest {
 			.setLimit(THREE_PHASE, 6000, 16000) //
 			.setHysteresis(INACTIVE) //
 			.setAppearsToBeFullyCharged(false) //
+<<<<<<< HEAD
 			.setProfiles(ImmutableList.of()) //
+=======
+			.setAbilities(a -> a.applySetPointIn(MILLI_AMPERE)) //
+>>>>>>> develop
 			.build();
 	private static final Input CTRL2 = InputBuilder.create() //
 			.setId("evse2") //
@@ -59,7 +80,11 @@ public class UtilsTest {
 			.setLimit(THREE_PHASE, 6000, 16000) //
 			.setHysteresis(INACTIVE) //
 			.setAppearsToBeFullyCharged(false) //
+<<<<<<< HEAD
 			.setProfiles(ImmutableList.of()) //
+=======
+			.setAbilities(a -> a.applySetPointIn(MILLI_AMPERE)) //
+>>>>>>> develop
 			.build();
 	private static final Input CTRL3 = InputBuilder.create() //
 			.setId("evse3") //
@@ -69,7 +94,11 @@ public class UtilsTest {
 			.setLimit(SINGLE_PHASE, 6000, 32000) //
 			.setHysteresis(INACTIVE) //
 			.setAppearsToBeFullyCharged(false) //
+<<<<<<< HEAD
 			.setProfiles(ImmutableList.of()) //
+=======
+			.setAbilities(a -> a.applySetPointIn(MILLI_AMPERE)) //
+>>>>>>> develop
 			.build();
 	private static final Input CTRL4 = InputBuilder.create() //
 			.setId("evse4") //
@@ -79,7 +108,11 @@ public class UtilsTest {
 			.setLimit(THREE_PHASE, 6000, 16000) //
 			.setHysteresis(INACTIVE) //
 			.setAppearsToBeFullyCharged(false) //
+<<<<<<< HEAD
 			.setProfiles(ImmutableList.of()) //
+=======
+			.setAbilities(a -> a.applySetPointIn(MILLI_AMPERE)) //
+>>>>>>> develop
 			.build();
 	private static final Input CTRL5 = InputBuilder.create() //
 			.setId("evse5") //
@@ -89,7 +122,11 @@ public class UtilsTest {
 			.setLimit(THREE_PHASE, 6000, 16000) //
 			.setHysteresis(INACTIVE) //
 			.setAppearsToBeFullyCharged(false) //
+<<<<<<< HEAD
 			.setProfiles(ImmutableList.of()) //
+=======
+			.setAbilities(a -> a.applySetPointIn(MILLI_AMPERE)) //
+>>>>>>> develop
 			.build();
 	private static final Input CTRL6 = InputBuilder.create() //
 			.setId("evse6") //
@@ -99,7 +136,11 @@ public class UtilsTest {
 			.setLimit(THREE_PHASE, 6000, 16000) //
 			.setHysteresis(INACTIVE) //
 			.setAppearsToBeFullyCharged(true) //
+<<<<<<< HEAD
 			.setProfiles(ImmutableList.of()) //
+=======
+			.setAbilities(a -> a.applySetPointIn(AMPERE)) //
+>>>>>>> develop
 			.build();
 	private static final Input CTRL7 = InputBuilder.create() //
 			.setId("evse7") //
@@ -109,10 +150,19 @@ public class UtilsTest {
 			.setLimit(THREE_PHASE, 6000, 16000) //
 			.setHysteresis(INACTIVE) //
 			.setAppearsToBeFullyCharged(true) //
+<<<<<<< HEAD
 			.setProfiles(ImmutableList.of()) //
 			.build();
 
 	private static final class InputBuilder {
+=======
+			.setAbilities(a -> a.applySetPointIn(MILLI_AMPERE)) //
+			.build();
+
+	private static final class InputBuilder {
+		private final ChargePointAbilities.Builder abiliites = ChargePointAbilities.create();
+
+>>>>>>> develop
 		private String id;
 		private boolean isReadyForCharging;
 		private Mode.Actual actualMode;
@@ -120,7 +170,10 @@ public class UtilsTest {
 		private Limit limit;
 		private Hysteresis hysteresis;
 		private boolean appearsToBeFullyCharged;
+<<<<<<< HEAD
 		private ImmutableList<Profile> profiles;
+=======
+>>>>>>> develop
 
 		public InputBuilder setId(String id) {
 			this.id = id;
@@ -157,14 +210,23 @@ public class UtilsTest {
 			return this;
 		}
 
+<<<<<<< HEAD
 		public InputBuilder setProfiles(ImmutableList<Profile> profiles) {
 			this.profiles = profiles;
+=======
+		public InputBuilder setAbilities(Consumer<ChargePointAbilities.Builder> abilities) {
+			abilities.accept(this.abiliites);
+>>>>>>> develop
 			return this;
 		}
 
 		public Input build() {
 			var params = new Params(this.isReadyForCharging, this.actualMode, this.activePower, this.limit,
+<<<<<<< HEAD
 					this.hysteresis, this.appearsToBeFullyCharged, this.profiles);
+=======
+					this.hysteresis, this.appearsToBeFullyCharged, this.abiliites.build());
+>>>>>>> develop
 			var ctrl = new DummyControllerEvseSingle(this.id) //
 					.withParams(params);
 			return new Input(ctrl, params);
@@ -193,6 +255,7 @@ public class UtilsTest {
 						CTRL5.ctrl()), //
 				log -> doNothing());
 
+<<<<<<< HEAD
 		assertEquals(16000, outputs.get(0).current());
 		assertEquals(6000, outputs.get(1).current());
 		assertEquals(6000, outputs.get(2).current()); // SURPLUS: appears to be fully charged
@@ -201,6 +264,18 @@ public class UtilsTest {
 		assertEquals(7130, outputs.get(5).current());
 		assertEquals(6000, outputs.get(6).current());
 		assertEquals(16000, outputs.get(7).current());
+=======
+		assertEquals(16000, outputs.get(0).actions().getApplySetPointInMilliAmpere().value());
+		assertEquals(6, outputs.get(1).actions().getApplySetPointInAmpere().value());
+		// SURPLUS: appears to be fully charged
+		assertEquals(6000, outputs.get(2).actions().getApplySetPointInMilliAmpere().value());
+		// FORCE: appears to be fully charged
+		assertEquals(6000, outputs.get(3).actions().getApplySetPointInMilliAmpere().value());
+		assertEquals(0, outputs.get(4).actions().getApplySetPointInMilliAmpere().value());
+		assertEquals(7130, outputs.get(5).actions().getApplySetPointInMilliAmpere().value());
+		assertEquals(6000, outputs.get(6).actions().getApplySetPointInMilliAmpere().value());
+		assertEquals(16000, outputs.get(7).actions().getApplySetPointInMilliAmpere().value());
+>>>>>>> develop
 	}
 
 	@Test
@@ -218,11 +293,11 @@ public class UtilsTest {
 						CTRL4.ctrl()), //
 				log -> doNothing());
 
-		assertEquals(7696, outputs.get(0).current());
-		assertEquals(6000, outputs.get(1).current());
-		assertEquals(0, outputs.get(2).current());
-		assertEquals(11087, outputs.get(3).current());
-		assertEquals(0, outputs.get(4).current());
+		assertEquals(7696, outputs.get(0).actions().getApplySetPointInMilliAmpere().value());
+		assertEquals(6000, outputs.get(1).actions().getApplySetPointInMilliAmpere().value());
+		assertEquals(0, outputs.get(2).actions().getApplySetPointInMilliAmpere().value());
+		assertEquals(11087, outputs.get(3).actions().getApplySetPointInMilliAmpere().value());
+		assertEquals(0, outputs.get(4).actions().getApplySetPointInMilliAmpere().value());
 	}
 
 	@Test

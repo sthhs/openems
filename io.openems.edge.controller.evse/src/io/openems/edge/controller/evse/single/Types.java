@@ -24,7 +24,11 @@ public class Types {
 		/** True if Current has been set, but no ActivePower was measured. */
 		private boolean appearsToBeFullyCharged = false;
 
+<<<<<<< HEAD
 		private record Entry(Integer activePower, int current) {
+=======
+		private record Entry(Integer activePower, int setPoint) {
+>>>>>>> develop
 		}
 
 		/**
@@ -32,10 +36,17 @@ public class Types {
 		 * 
 		 * @param now         the timestamp
 		 * @param activePower the measured {@link EvseChargePoint} ActivePower
+<<<<<<< HEAD
 		 * @param current     the set-point Current
 		 */
 		public synchronized void addEntry(Instant now, Integer activePower, int current) {
 			this.entries.put(now, new Entry(activePower, current));
+=======
+		 * @param setPoint    the {@link SetPoint} value
+		 */
+		public synchronized void addEntry(Instant now, Integer activePower, int setPoint) {
+			this.entries.put(now, new Entry(activePower, setPoint));
+>>>>>>> develop
 
 			// Clear outdated entries; update entriesFullyInitialized
 			var outdatedEntries = this.entries.headMap(now.minusSeconds(MAX_AGE));
@@ -47,7 +58,11 @@ public class Types {
 			// Update AppearsToBeFullyCharged
 			if (activePower != null && activePower > 500 /* [W] threshold */) {
 				this.appearsToBeFullyCharged = false;
+<<<<<<< HEAD
 			} else if (this.entriesFullyInitialized && this.noCurrentsAreZero()) {
+=======
+			} else if (this.entriesFullyInitialized && this.noSetPointsAreZero()) {
+>>>>>>> develop
 				this.appearsToBeFullyCharged = true;
 			}
 		}
@@ -66,10 +81,17 @@ public class Types {
 		 * 
 		 * @return boolean
 		 */
+<<<<<<< HEAD
 		public boolean allCurrentsAreZero() {
 			return this.entries.values().stream() //
 					.map(Entry::current) //
 					.allMatch(v -> v == 0);
+=======
+		public boolean allSetPointsAreZero() {
+			return this.entries.values().stream() //
+					.map(Entry::setPoint) //
+					.allMatch(sp -> sp == 0);
+>>>>>>> develop
 		}
 
 		/**
@@ -77,10 +99,17 @@ public class Types {
 		 * 
 		 * @return boolean
 		 */
+<<<<<<< HEAD
 		public boolean noCurrentsAreZero() {
 			return this.entries.values().stream() //
 					.map(Entry::current) //
 					.allMatch(v -> v != 0);
+=======
+		public boolean noSetPointsAreZero() {
+			return this.entries.values().stream() //
+					.map(Entry::setPoint) //
+					.allMatch(sp -> sp != 0);
+>>>>>>> develop
 		}
 
 		public synchronized boolean getAppearsToBeFullyCharged() {
@@ -110,15 +139,24 @@ public class Types {
 				return Hysteresis.INACTIVE;
 			}
 			var lastValue = entries.lastEntry().getValue();
+<<<<<<< HEAD
 			if (lastValue.current == 0) {
 				if (history.allCurrentsAreZero()) {
+=======
+			if (lastValue.setPoint == 0) {
+				if (history.allSetPointsAreZero()) {
+>>>>>>> develop
 					return Hysteresis.INACTIVE; // Hysteresis finished
 				} else {
 					return Hysteresis.KEEP_ZERO;
 				}
 
 			} else {
+<<<<<<< HEAD
 				if (history.noCurrentsAreZero()) {
+=======
+				if (history.noSetPointsAreZero()) {
+>>>>>>> develop
 					return Hysteresis.INACTIVE; // Hysteresis finished
 				} else {
 					return Hysteresis.KEEP_CHARGING;

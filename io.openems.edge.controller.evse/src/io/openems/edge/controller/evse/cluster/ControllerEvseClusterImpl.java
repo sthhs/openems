@@ -73,7 +73,11 @@ public class ControllerEvseClusterImpl extends AbstractOpenemsComponent
 	public void run() {
 		for (var result : calculate(this.config.distributionStrategy(), this.sum, this.ctrls, this::logDebug)) {
 			// Apply current & commands
+<<<<<<< HEAD
 			result.ctrl().apply(result.current(), result.commands());
+=======
+			result.ctrl().apply(result.actions());
+>>>>>>> develop
 		}
 	}
 

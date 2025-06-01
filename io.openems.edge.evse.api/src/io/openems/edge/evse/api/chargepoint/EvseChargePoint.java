@@ -3,7 +3,10 @@ package io.openems.edge.evse.api.chargepoint;
 import static io.openems.common.jsonrpc.serialization.JsonSerializerUtil.jsonObjectSerializer;
 import static io.openems.common.utils.JsonUtils.buildJsonObject;
 
+<<<<<<< HEAD
 import com.google.common.collect.ImmutableList;
+=======
+>>>>>>> develop
 import com.google.gson.JsonNull;
 
 import io.openems.common.jsonrpc.serialization.JsonSerializer;
@@ -13,6 +16,8 @@ import io.openems.edge.common.channel.Doc;
 import io.openems.edge.common.channel.value.Value;
 import io.openems.edge.common.component.OpenemsComponent;
 import io.openems.edge.evse.api.Limit;
+import io.openems.edge.evse.api.chargepoint.Profile.ChargePointAbilities;
+import io.openems.edge.evse.api.chargepoint.Profile.ChargePointActions;
 import io.openems.edge.meter.api.ElectricityMeter;
 
 public interface EvseChargePoint extends ElectricityMeter, OpenemsComponent {
@@ -43,7 +48,8 @@ public interface EvseChargePoint extends ElectricityMeter, OpenemsComponent {
 		}
 	}
 
-	public record ChargeParams(boolean isReadyForCharging, Limit limit, ImmutableList<Profile> profiles) {
+	// TODO consider replace with ChargePointAbilities
+	public record ChargeParams(boolean isReadyForCharging, Limit limit, ChargePointAbilities abilities) {
 
 		/**
 		 * Returns a {@link JsonSerializer} for a {@link ChargeParams}.
@@ -55,8 +61,13 @@ public interface EvseChargePoint extends ElectricityMeter, OpenemsComponent {
 				return new ChargeParams(//
 						json.getBoolean("isReadyForCharging"), //
 						json.getObject("limit", Limit.serializer()), //
+<<<<<<< HEAD
 						// TODO json.getImmutableList("profiles", Profile.serializer())
 						ImmutableList.of());
+=======
+						// TODO json.getImmutableList("abilities", ChargePointAbilities.serializer())
+						ChargePointAbilities.create().build());
+>>>>>>> develop
 			}, obj -> {
 				return obj == null //
 						? JsonNull.INSTANCE //
@@ -77,12 +88,11 @@ public interface EvseChargePoint extends ElectricityMeter, OpenemsComponent {
 	public ChargeParams getChargeParams();
 
 	/**
-	 * Apply Current in [mA] and optionally {@link Profile.Command}s.
+	 * Apply {@link ChargePointActions}.
 	 * 
-	 * @param current         the Current in [mA]
-	 * @param profileCommands the {@link Profile.Command}s
+	 * @param actions the {@link ChargePointActions}
 	 */
-	public void apply(int current, ImmutableList<Profile.Command> profileCommands);
+	public void apply(ChargePointActions actions);
 
 	/**
 	 * Is this Charge-Point installed according to standard or rotated wiring?. See

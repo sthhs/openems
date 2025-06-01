@@ -27,8 +27,6 @@ import org.osgi.service.metatype.annotations.Designate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ImmutableList;
-
 import io.openems.common.exceptions.OpenemsError.OpenemsNamedException;
 import io.openems.edge.common.channel.value.Value;
 import io.openems.edge.common.component.AbstractOpenemsComponent;
@@ -50,7 +48,7 @@ import io.openems.edge.energy.api.handler.EshWithOnlyOneMode;
 import io.openems.edge.evse.api.chargepoint.EvseChargePoint;
 import io.openems.edge.evse.api.chargepoint.Mode;
 import io.openems.edge.evse.api.chargepoint.Mode.Actual;
-import io.openems.edge.evse.api.chargepoint.Profile;
+import io.openems.edge.evse.api.chargepoint.Profile.ChargePointActions;
 import io.openems.edge.evse.api.electricvehicle.EvseElectricVehicle;
 
 @Designate(ocd = Config.class, factory = true)
@@ -214,7 +212,11 @@ public class ControllerEvseSingleImpl extends AbstractOpenemsComponent implement
 		var appearsToBeFullyCharged = this.history.getAppearsToBeFullyCharged();
 
 		return new Params(isReadyForCharging, actualMode, activePower, limits, hysteresis, appearsToBeFullyCharged,
+<<<<<<< HEAD
 				chargePoint.profiles());
+=======
+				chargePoint.abilities());
+>>>>>>> develop
 	}
 
 	@Override
@@ -223,10 +225,17 @@ public class ControllerEvseSingleImpl extends AbstractOpenemsComponent implement
 	}
 
 	@Override
+<<<<<<< HEAD
 	public void apply(int current, ImmutableList<Profile.Command> profileCommands) {
 		this.chargePoint.apply(current, profileCommands);
 
 		this.history.addEntry(Instant.now(), this.chargePoint.getActivePower().get(), current);
+=======
+	public void apply(ChargePointActions actions) {
+		this.chargePoint.apply(actions);
+
+		this.history.addEntry(Instant.now(), this.chargePoint.getActivePower().get(), actions.applySetPoint().value());
+>>>>>>> develop
 	}
 
 	@Override
