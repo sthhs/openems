@@ -1,6 +1,7 @@
 {
   "name": "openems-ui",
 <<<<<<< HEAD
+<<<<<<< HEAD
   "version": "2025.6.0-SNAPSHOT",
   "license": "AGPL-3.0",
   "private": true,
@@ -15,6 +16,9 @@
     "@angular/service-worker": "19.2.8",
 =======
   "version": "2025.6.0",
+=======
+  "version": "2025.7.0-SNAPSHOT",
+>>>>>>> develop
   "license": "AGPL-3.0",
   "private": true,
   "dependencies": {

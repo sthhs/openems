@@ -40,8 +40,12 @@ FROM base_container
 COPY --from=build_backend /opt/root/ /
 COPY --from=build_backend /opt/openems-backend.jar /opt/openems/openems-backend.jar
 
+<<<<<<< HEAD
 RUN find /etc/s6-overlay -type f -print0 | xargs -0 dos2unix && \
     find /var/opt/openems -type f -print0 | xargs -0 dos2unix
+=======
+RUN find /etc/s6-overlay/ -type f -name 'run' -exec chmod +x {} \;
+>>>>>>> develop
 
 VOLUME /var/opt/openems/config
 VOLUME /var/opt/openems/data

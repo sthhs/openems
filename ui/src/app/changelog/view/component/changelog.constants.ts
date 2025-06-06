@@ -3,9 +3,13 @@ import { Role } from "src/app/shared/type/role";
 export class Changelog {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     public static readonly UI_VERSION = "2025.6.0-SNAPSHOT";
 =======
     public static readonly UI_VERSION = "2025.6.0";
+>>>>>>> develop
+=======
+    public static readonly UI_VERSION = "2025.7.0-SNAPSHOT";
 >>>>>>> develop
 
     public static product(...products: Product[]) {

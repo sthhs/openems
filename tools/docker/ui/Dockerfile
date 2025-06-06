@@ -40,8 +40,12 @@ COPY --from=build_ui /src/target/ /var/www/html/openems/
 COPY --from=build_ui /opt/assets/ /var/www/html/openems/assets/
 COPY --from=build_ui /opt/root/ /
 
+<<<<<<< HEAD
 RUN find /etc/s6-overlay -type f -print0 | xargs -0 dos2unix && \
     find /etc/nginx -type f -print0 | xargs -0 dos2unix
+=======
+RUN find /etc/s6-overlay/ -type f -name 'run' -exec chmod +x {} \;
+>>>>>>> develop
 
 VOLUME /etc/nginx
 VOLUME /var/log/nginx
