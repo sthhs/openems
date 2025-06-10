@@ -6,8 +6,6 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 import io.openems.common.types.MeterType;
 import io.openems.edge.meter.api.SinglePhase;
 
-import io.openems.edge.io.shelly.common.Utils;
-
 @ObjectClassDefinition(//
 		name = "IO Shelly Plus 1PM", //
 		description = "Implements the Shelly 2ndGen / Plug WiFi Switch.")
@@ -28,10 +26,6 @@ import io.openems.edge.io.shelly.common.Utils;
 	@AttributeDefinition(name = "IP-Address", description = "The IP address of the Shelly device.")
 	String ip();
 
-	@AttributeDefinition(name = "Shelly-Type", description = "Which type of shelly?")
-	Utils.ShellyModel shellyModel() default Utils.ShellyModel.Plus1PM;
-
-	
 	@AttributeDefinition(name = "Meter-Type", description = "What is measured by this Meter?")
 	MeterType type() default MeterType.CONSUMPTION_METERED;
 

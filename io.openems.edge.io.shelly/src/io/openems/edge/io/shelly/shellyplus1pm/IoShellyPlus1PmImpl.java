@@ -36,7 +36,6 @@ import io.openems.edge.common.component.AbstractOpenemsComponent;
 import io.openems.edge.common.component.OpenemsComponent;
 import io.openems.edge.common.event.EdgeEventConstants;
 import io.openems.edge.io.api.DigitalOutput;
-import io.openems.edge.io.shelly.common.Utils;
 import io.openems.edge.meter.api.ElectricityMeter;
 import io.openems.edge.meter.api.SinglePhase;
 import io.openems.edge.meter.api.SinglePhaseMeter;
@@ -68,7 +67,6 @@ public class IoShellyPlus1PmImpl extends AbstractOpenemsComponent implements IoS
 	private MeterType meterType = null;
 	private SinglePhase phase = null;
 	private String baseUrl;
-	private Utils.ShellyModel shellyModel = null;
 
 	@Reference(policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY, cardinality = ReferenceCardinality.OPTIONAL)
 	private volatile Timedata timedata;
@@ -100,8 +98,7 @@ public class IoShellyPlus1PmImpl extends AbstractOpenemsComponent implements IoS
 		this.phase = config.phase();
 		this.baseUrl = "http://" + config.ip();
 		this.httpBridge = this.httpBridgeFactory.get();
-		this.shellyModel = config.shellyModel();
-		
+
 		if (!this.isEnabled()) {
 			return;
 		}
@@ -126,11 +123,7 @@ public class IoShellyPlus1PmImpl extends AbstractOpenemsComponent implements IoS
 
 	@Override
 	public String debugLog() {
-		if (this.shellyModel.hasRelay()) {
-			return generateDebugLog(this.digitalOutputChannels, this.getActivePowerChannel());			
-		} else {
-			return generateDebugLog(this.getActivePowerChannel());
-		}
+		return generateDebugLog(this.digitalOutputChannels, this.getActivePowerChannel());
 	}
 
 	@Override
@@ -162,28 +155,21 @@ public class IoShellyPlus1PmImpl extends AbstractOpenemsComponent implements IoS
 		} else {
 			try {
 				var jsonResponse = getAsJsonObject(result.data());
-				
-				if (jsonResponse.has(this.shellyModel.channel())) {
-					var powerChannel = getAsJsonObject(jsonResponse, this.shellyModel.channel());
-					power = round(getAsFloat(powerChannel, "apower"));
-					voltage = round(getAsFloat(powerChannel, "voltage") * 1000);
-					current = round(getAsFloat(powerChannel, "current") * 1000);
-					if (this.shellyModel.hasRelay()) {
-						relay0 = getAsBoolean(powerChannel, "output");
-					}
-					var sys = getAsJsonObject(jsonResponse, "sys");
-					restartRequired = getAsBoolean(sys, "restart_required");
-					
-				}
+				var switch0 = getAsJsonObject(jsonResponse, "switch:0");
+				power = round(getAsFloat(switch0, "apower"));
+				voltage = round(getAsFloat(switch0, "voltage") * 1000);
+				current = round(getAsFloat(switch0, "current") * 1000);
+				relay0 = getAsBoolean(switch0, "output");
+
+				var sys = getAsJsonObject(jsonResponse, "sys");
+				restartRequired = getAsBoolean(sys, "restart_required");
 
 			} catch (OpenemsNamedException e) {
 				this.logDebug(this.log, e.getMessage());
 			}
 		}
 
-		if (this.shellyModel.hasRelay()) {
-			this._setRelay(relay0);
-		}
+		this._setRelay(relay0);
 		this._setActivePower(power);
 		this._setCurrent(current);
 		this._setVoltage(voltage);
@@ -197,28 +183,26 @@ public class IoShellyPlus1PmImpl extends AbstractOpenemsComponent implements IoS
 	 * @param index   index
 	 */
 	private void executeWrite(BooleanWriteChannel channel, int index) {
-		if (this.shellyModel.hasRelay()) {
-			var readValue = channel.value().get();
-			var writeValue = channel.getNextWriteValueAndReset();
-			if (writeValue.isEmpty()) {
-				// no write value
-				return;
-			}
-			if (Objects.equals(readValue, writeValue.get())) {
-				// read value equals write value, so no need to write
-				return;
-			}
-			final String url = this.baseUrl + "/relay/" + index + "?turn=" + (writeValue.get() ? "on" : "off");
-			this.httpBridge.get(url).whenComplete((response, error) -> {
-				if (error != null) {
-					this.logError(this.log, "HTTP request failed: " + error.getMessage());
-					this._setSlaveCommunicationFailed(true);
-				} else {
-					// Optionally log success or handle response
-					this._setSlaveCommunicationFailed(false);
-				}
-			});
+		var readValue = channel.value().get();
+		var writeValue = channel.getNextWriteValueAndReset();
+		if (writeValue.isEmpty()) {
+			// no write value
+			return;
 		}
+		if (Objects.equals(readValue, writeValue.get())) {
+			// read value equals write value, so no need to write
+			return;
+		}
+		final String url = this.baseUrl + "/relay/" + index + "?turn=" + (writeValue.get() ? "on" : "off");
+		this.httpBridge.get(url).whenComplete((response, error) -> {
+			if (error != null) {
+				this.logError(this.log, "HTTP request failed: " + error.getMessage());
+				this._setSlaveCommunicationFailed(true);
+			} else {
+				// Optionally log success or handle response
+				this._setSlaveCommunicationFailed(false);
+			}
+		});
 	}
 
 	/**
