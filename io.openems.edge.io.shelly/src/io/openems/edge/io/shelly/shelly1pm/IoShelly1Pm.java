@@ -2,7 +2,10 @@ package io.openems.edge.io.shelly.shelly1pm;
 
 import org.osgi.service.event.EventHandler;
 
+import io.openems.common.channel.AccessMode;
 import io.openems.common.channel.Level;
+import io.openems.common.types.OpenemsType;
+import io.openems.edge.common.channel.BooleanDoc;
 import io.openems.edge.common.channel.Doc;
 import io.openems.edge.common.channel.StateChannel;
 import io.openems.edge.common.channel.value.Value;
@@ -14,6 +17,37 @@ public interface IoShelly1Pm
 		extends SinglePhaseMeter, ElectricityMeter, OpenemsComponent, EventHandler {
 
 	public static enum ChannelId implements io.openems.edge.common.channel.ChannelId {
+		/**
+		 * Holds writes to Relay Output for debugging.
+		 *
+		 * <ul>
+		 * <li>Interface: ShellyPlus1PM
+		 * <li>Type: Boolean
+		 * <li>Range: On/Off
+		 * </ul>
+		 */
+		DEBUG_RELAY(Doc.of(OpenemsType.BOOLEAN)), //
+		/**
+		 * Relay Output.
+		 *
+		 * <ul>
+		 * <li>Interface: ShellyPlus1PM
+		 * <li>Type: Boolean
+		 * <li>Range: On/Off
+		 * </ul>
+		 */
+		RELAY(new BooleanDoc() //
+				.accessMode(AccessMode.READ_WRITE) //
+				.onChannelSetNextWriteMirrorToDebugChannel(ChannelId.DEBUG_RELAY)),
+		/**
+		 * Indicates whether the Shelly needs a restart.
+		 *
+		 * <ul>
+		 * <li>Interface: ShellyPlus1PM
+		 * <li>Type: Boolean
+		 * <li>Level: WARN
+		 * </ul>
+		 */
 		/**
 		 * Indicates whether the Shelly needs a restart.
 		 *
