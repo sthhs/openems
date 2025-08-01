@@ -12,6 +12,7 @@ public class MyConfig extends AbstractComponentConfig implements Config {
 		private String ip;
 		private MeterType type;
 		private SinglePhase phase;
+		private boolean addToSum;
 
 		private Builder() {
 		}
@@ -36,9 +37,16 @@ public class MyConfig extends AbstractComponentConfig implements Config {
 			return this;
 		}
 
+		public Builder setAddToSum() {
+			this.addToSum = addToSum;
+			return this;
+		}
+
 		public MyConfig build() {
 			return new MyConfig(this);
 		}
+
+
 	}
 
 	/**
@@ -70,5 +78,10 @@ public class MyConfig extends AbstractComponentConfig implements Config {
 	@Override
 	public SinglePhase phase() {
 		return this.builder.phase;
+	}
+
+	@Override
+	public boolean addToSum() {
+		return this.builder.addToSum;
 	}
 }

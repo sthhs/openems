@@ -29,5 +29,8 @@ import io.openems.edge.common.type.Phase.SinglePhase;
 	@AttributeDefinition(name = "Meter-Type", description = "What is measured by this Meter?")
 	MeterType type() default MeterType.CONSUMPTION_METERED;
 
+	@AttributeDefinition(name = "Add to Sum?", description = "Should the data of this meter be added to the Sum?")
+	boolean addToSum() default true;
+
 	String webconsole_configurationFactory_nameHint() default "IO Shelly Plus PM Mini [{id}]";
 }

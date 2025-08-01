@@ -63,6 +63,7 @@ public class IoShellyPlusPmMiniImpl extends AbstractOpenemsComponent implements 
 	private MeterType meterType = null;
 	private SinglePhase phase = null;
 	private String baseUrl;
+	private boolean addToSum;
 
 	@Reference(policy = DYNAMIC, policyOption = GREEDY, cardinality = OPTIONAL)
 	private volatile Timedata timedata;
@@ -90,7 +91,8 @@ public class IoShellyPlusPmMiniImpl extends AbstractOpenemsComponent implements 
 		this.phase = config.phase();
 		this.baseUrl = "http://" + config.ip();
 		this.httpBridge = this.httpBridgeFactory.get();
-
+		this.addToSum = config.addToSum();
+		
 		if (!this.isEnabled()) {
 			return;
 		}
@@ -190,6 +192,11 @@ public class IoShellyPlusPmMiniImpl extends AbstractOpenemsComponent implements 
 	@Override
 	public Timedata getTimedata() {
 		return this.timedata;
+	}
+
+	@Override
+	public boolean addToSum() {
+		return this.addToSum;
 	}
 
 }

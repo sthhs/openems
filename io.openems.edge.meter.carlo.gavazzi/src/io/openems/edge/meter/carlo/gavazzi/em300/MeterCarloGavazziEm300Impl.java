@@ -172,6 +172,11 @@ public class MeterCarloGavazziEm300Impl extends AbstractOpenemsModbusComponent
 	}
 
 	@Override
+	public boolean addToSum() {
+		return this.config.addToSum();
+	}
+
+	@Override
 	public String debugLog() {
 		return "L:" + this.getActivePower().asString();
 	}

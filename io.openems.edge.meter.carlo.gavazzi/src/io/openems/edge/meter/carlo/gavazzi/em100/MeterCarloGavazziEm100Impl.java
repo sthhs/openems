@@ -137,6 +137,10 @@ public class MeterCarloGavazziEm100Impl extends AbstractOpenemsModbusComponent
 	}
 
 	@Override
+	public boolean addToSum() {
+		return this.config.addToSum();
+	}
+	@Override
 	public SinglePhase getPhase() {
 		return this.config.phase();
 	}
