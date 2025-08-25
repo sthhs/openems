@@ -18,6 +18,7 @@ import io.openems.edge.common.component.OpenemsComponent;
 import io.openems.edge.common.modbusslave.ModbusSlaveNatureTable;
 import io.openems.edge.common.modbusslave.ModbusType;
 import io.openems.edge.common.type.TypeUtils;
+import io.openems.edge.common.sum.SumOptions;
 
 /**
  * Represents an electricity Meter.
@@ -73,7 +74,7 @@ import io.openems.edge.common.type.TypeUtils;
  * Nature additionally and consider using its helper methods.
  */
 @ProviderType
-public interface ElectricityMeter extends OpenemsComponent {
+public interface ElectricityMeter extends OpenemsComponent, SumOptions {
 
 	public enum ChannelId implements io.openems.edge.common.channel.ChannelId {
 		/**
