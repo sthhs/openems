@@ -64,20 +64,36 @@ export namespace ChartConstants {
       public static HEAT_PUMP_SUFFIX = (translate: TranslateService, value: number | null): string => {
         switch (value) {
           case -1:
-            return translate.instant("Edge.Index.Widgets.HeatPump.undefined");
+            return translate.instant("EDGE.INDEX.WIDGETS.HEAT_PUMP.UNDEFINED");
           case 1:
-            return translate.instant("Edge.Index.Widgets.HeatPump.lock");
+            return translate.instant("EDGE.INDEX.WIDGETS.HEAT_PUMP.LOCK");
           case 2:
-            return translate.instant("Edge.Index.Widgets.HeatPump.normalOperation");
+            return translate.instant("EDGE.INDEX.WIDGETS.HEAT_PUMP.NORMAL_OPERATION");
           case 3:
-            return translate.instant("Edge.Index.Widgets.HeatPump.switchOnRec");
+            return translate.instant("EDGE.INDEX.WIDGETS.HEAT_PUMP.SWITCH_ON_REC");
           case 4:
-            return translate.instant("Edge.Index.Widgets.HeatPump.switchOnCom");
+            return translate.instant("EDGE.INDEX.WIDGETS.HEAT_PUMP.SWITCH_ON_COM");
+          default:
+            return "";
+        }
+      };
+
+      public static ENERIX_CONTROL_SUFFIX = (translate: TranslateService, value: number | null): string => {
+        switch (value) {
+          case -1:
+            return translate.instant("EDGE.INDEX.WIDGETS.HEAT_PUMP.UNDEFINED");
+          case 1:
+            return translate.instant("GENERAL.OFF");
+          case 2:
+            return translate.instant("EDGE.INDEX.WIDGETS.ENERIX_CONTROL.NO_DISCHARGE");
+          case 3:
+            return translate.instant("EDGE.INDEX.WIDGETS.ENERIX_CONTROL.FORCE_CHARGE");
           default:
             return "";
         }
       };
     };
+
 
     /**
      * Places the yAxis above the chart
@@ -216,7 +232,12 @@ export namespace ChartConstants {
     });
 
 
-    public static POINT_STYLE = (dataset: ChartDataset): Pick<LegendItem, "pointStyle" | "fillStyle" | "lineDash"> | EmptyObj => {
+    public static POINT_STYLE = (dataset: ChartDataset): Pick<LegendItem, "pointStyle" | "fillStyle" | "lineDash"> => {
+
+      if (dataset == null || dataset.backgroundColor == null) {
+        return { pointStyle: Chart.defaults.plugins.legend.labels.pointStyle };
+      }
+
       if ("borderDash" in dataset) {
         return { pointStyle: "circle", lineDash: [3, 3] };
       }
@@ -256,6 +277,7 @@ export namespace ChartConstants {
   export class NumberFormat {
     public static NO_DECIMALS: string = "1.0-0";
     public static ZERO_TO_TWO: string = "1.0-2";
+    public static TWO: string = "1.2-2";
   }
 
   /**
