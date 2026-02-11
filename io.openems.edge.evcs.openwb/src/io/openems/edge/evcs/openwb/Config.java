@@ -25,6 +25,9 @@ import io.openems.edge.meter.api.PhaseRotation;
 	@AttributeDefinition(name = "Chargepoint", description = "Number of the internal chargepoint (duo_num)")
 	ChargePoint chargePoint() default ChargePoint.CP0;
 
+	@AttributeDefinition(name = "Chargepoint ID", description = "ID of thechargepoint (duo_num)")
+	int chargePointID() default 1;
+
 	@AttributeDefinition(name = "Phase rotation", description = "The way in which the phases are physically rotated.")
 	PhaseRotation phaseRotation() default PhaseRotation.L1_L2_L3;
 
