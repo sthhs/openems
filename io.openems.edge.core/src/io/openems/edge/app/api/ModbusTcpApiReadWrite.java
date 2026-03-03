@@ -149,10 +149,10 @@ public class ModbusTcpApiReadWrite extends AbstractOpenemsAppWithProps<ModbusTcp
 
 			final var dependencies = Lists.newArrayList(//
 					new DependencyDeclaration("READ_ONLY", //
-							DependencyDeclaration.CreatePolicy.NEVER, //
+							DependencyDeclaration.CreatePolicy.ALWAYS, //
 							DependencyDeclaration.UpdatePolicy.ALWAYS, //
 							DependencyDeclaration.DeletePolicy.NEVER, //
-							DependencyDeclaration.DependencyUpdatePolicy.ALLOW_ONLY_UNCONFIGURED_PROPERTIES, //
+							DependencyDeclaration.DependencyUpdatePolicy.ALLOW_ALL, //
 							DependencyDeclaration.DependencyDeletePolicy.ALLOWED, //
 							DependencyDeclaration.AppDependencyConfig.create() //
 									.setAppId("App.Api.ModbusTcp.ReadOnly") //

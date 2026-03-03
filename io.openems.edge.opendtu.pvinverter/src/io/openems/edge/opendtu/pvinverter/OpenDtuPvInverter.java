@@ -1,4 +1,4 @@
-package io.openems.edge.meter.opendtu;
+package io.openems.edge.opendtu.pvinverter;
 
 import io.openems.common.channel.Level;
 import io.openems.edge.common.channel.Doc;
@@ -8,7 +8,7 @@ import io.openems.edge.common.component.OpenemsComponent;
 import io.openems.edge.meter.api.ElectricityMeter;
 import io.openems.edge.meter.api.SinglePhaseMeter;
 
-public interface MeterOpenDtu extends ElectricityMeter, SinglePhaseMeter, OpenemsComponent {
+public interface OpenDtuPvInverter extends ElectricityMeter, SinglePhaseMeter, OpenemsComponent {
 
 	public enum ChannelId implements io.openems.edge.common.channel.ChannelId {
 

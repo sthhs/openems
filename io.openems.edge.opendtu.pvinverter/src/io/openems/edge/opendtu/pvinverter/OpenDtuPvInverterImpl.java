@@ -1,4 +1,4 @@
-package io.openems.edge.meter.opendtu;
+package io.openems.edge.opendtu.pvinverter;
 
 import static io.openems.common.utils.JsonUtils.getAsJsonObject;
 import static io.openems.edge.common.channel.ChannelUtils.setValue;
@@ -6,6 +6,8 @@ import static org.osgi.service.component.annotations.ReferenceCardinality.MANDAT
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+import java.util.Map;
 
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -25,12 +27,13 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
 
-import io.openems.common.channel.AccessMode;
+//import io.openems.common.channel.AccessMode;
 import io.openems.common.exceptions.InvalidValueException;
 import io.openems.common.exceptions.OpenemsException;
 import io.openems.common.exceptions.OpenemsError.OpenemsNamedException;
 import io.openems.common.types.MeterType;
 import io.openems.common.utils.JsonUtils;
+import io.openems.edge.bridge.http.cycle.HttpBridgeCycleService;
 import io.openems.edge.bridge.http.cycle.HttpBridgeCycleServiceDefinition;
 
 import io.openems.common.bridge.http.api.BridgeHttp;
@@ -40,12 +43,13 @@ import io.openems.common.bridge.http.api.HttpResponse;
 import io.openems.edge.common.component.AbstractOpenemsComponent;
 import io.openems.edge.common.component.OpenemsComponent;
 import io.openems.edge.common.event.EdgeEventConstants;
-import io.openems.edge.common.modbusslave.ModbusSlave;
-import io.openems.edge.common.modbusslave.ModbusSlaveNatureTable;
-import io.openems.edge.common.modbusslave.ModbusSlaveTable;
+//import io.openems.edge.common.modbusslave.ModbusSlave;
+//import io.openems.edge.common.modbusslave.ModbusSlaveNatureTable;
+//import io.openems.edge.common.modbusslave.ModbusSlaveTable;
 import io.openems.edge.common.type.Phase.SinglePhase;
 import io.openems.edge.meter.api.ElectricityMeter;
 import io.openems.edge.meter.api.SinglePhaseMeter;
+import io.openems.edge.pvinverter.api.ManagedSymmetricPvInverter;
 import io.openems.edge.timedata.api.Timedata;
 import io.openems.edge.timedata.api.TimedataProvider;
 import io.openems.edge.timedata.api.utils.CalculateEnergyFromPower;
@@ -55,16 +59,17 @@ import static java.lang.Math.round;
 
 @Designate(ocd = Config.class, factory = true)
 @Component(//
-		name = "Meter.OpenDTU", //
+		name = "PVInverter.OpenDTU", //
 		immediate = true, //
-		configurationPolicy = ConfigurationPolicy.REQUIRE //
+		configurationPolicy = ConfigurationPolicy.REQUIRE, //
+		property = {"type=PRODUCTION"} //
 )
 @EventTopics({ //
 		EdgeEventConstants.TOPIC_CYCLE_AFTER_PROCESS_IMAGE, //
 		EdgeEventConstants.TOPIC_CYCLE_EXECUTE_WRITE //
 })
-public class MeterOpenDtuImpl extends AbstractOpenemsComponent
-		implements MeterOpenDtu, ElectricityMeter, SinglePhaseMeter, OpenemsComponent, TimedataProvider, EventHandler, ModbusSlave {
+public class OpenDtuPvInverterImpl extends AbstractOpenemsComponent
+		implements OpenDtuPvInverter, ManagedSymmetricPvInverter, ElectricityMeter, SinglePhaseMeter, OpenemsComponent, TimedataProvider, EventHandler {
 
 	private final CalculateEnergyFromPower calculateProductionEnergy = new CalculateEnergyFromPower(this,
 			ElectricityMeter.ChannelId.ACTIVE_PRODUCTION_ENERGY);
@@ -72,25 +77,29 @@ public class MeterOpenDtuImpl extends AbstractOpenemsComponent
 			ElectricityMeter.ChannelId.ACTIVE_CONSUMPTION_ENERGY);
 
 
-	private final Logger log = LoggerFactory.getLogger(MeterOpenDtuImpl.class);
+	private final Logger log = LoggerFactory.getLogger(OpenDtuPvInverterImpl.class);
 
 	private String baseUrl;
+	private Map<String, String> headers;
 	private Config config;
 
 	@Reference(cardinality = MANDATORY)
 	private BridgeHttpFactory httpBridgeFactory;
 	private BridgeHttp httpBridge;
+	private HttpBridgeCycleService cycleService;
+
 	@Reference
 	private HttpBridgeCycleServiceDefinition httpBridgeCycleServiceDefinition;
 
 	@Reference(policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY, cardinality = ReferenceCardinality.OPTIONAL)
 	private volatile Timedata timedata;
 
-	public MeterOpenDtuImpl() {
+	public OpenDtuPvInverterImpl() {
 		super(//
 				OpenemsComponent.ChannelId.values(), //
 				ElectricityMeter.ChannelId.values(), //
-				MeterOpenDtu.ChannelId.values() //
+				ManagedSymmetricPvInverter.ChannelId.values(), //
+				OpenDtuPvInverter.ChannelId.values() //
 		);
 		
 		SinglePhaseMeter.calculateSinglePhaseFromActivePower(this);
@@ -107,12 +116,22 @@ public class MeterOpenDtuImpl extends AbstractOpenemsComponent
 		this.baseUrl = "http://" + config.ipAddress();
 		this.httpBridge = this.httpBridgeFactory.get();
 
+		// Setup Basic Authentication headers
+		String auth = config.username() + ":" + config.password();
+		String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+		this.headers = Map.of("Authorization", "Basic " + encodedAuth, "Accept", "text/html");
+
+		// Set PV inverter limits
+		this._setMaxApparentPower(null); // Not limited
+		this._setActivePowerLimit(null); // Not limited
+
 		if (!this.isEnabled()) {
 			return;
 		}
 
-		final var cycleService = this.httpBridge.createService(this.httpBridgeCycleServiceDefinition);
-		cycleService.subscribeJsonEveryCycle(this.baseUrl + "/api/livedata/status?inv=" + config.serialNumber(), this::processHttpResult);
+		this.cycleService = this.httpBridge.createService(this.httpBridgeCycleServiceDefinition);
+		
+		this.cycleService.subscribeJsonEveryCycle(this.baseUrl + "/api/livedata/status?inv=" + config.serialNumber(), this::processHttpResult);
 	}
 
 	@Deactivate
@@ -144,7 +163,7 @@ public class MeterOpenDtuImpl extends AbstractOpenemsComponent
 	}
 
 	private void processHttpResult(HttpResponse<JsonElement> result, Throwable error) {
-		setValue(this, MeterOpenDtu.ChannelId.SLAVE_COMMUNICATION_FAILED, result == null);
+		setValue(this, OpenDtuPvInverter.ChannelId.SLAVE_COMMUNICATION_FAILED, result == null);
 
 		Integer power = null;
 		Integer voltage = null;
@@ -209,6 +228,7 @@ public class MeterOpenDtuImpl extends AbstractOpenemsComponent
 		return this.config.phase();
 	}
 
+	/*
 	@Override
 	public ModbusSlaveTable getModbusSlaveTable(AccessMode accessMode) {
 		return new ModbusSlaveTable(//
@@ -217,5 +237,5 @@ public class MeterOpenDtuImpl extends AbstractOpenemsComponent
 				ModbusSlaveNatureTable.of(MeterOpenDtu.class, accessMode, 100) //
 						.build());
 	}
-
+*/
 }

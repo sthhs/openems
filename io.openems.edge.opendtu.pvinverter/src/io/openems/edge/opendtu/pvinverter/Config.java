@@ -1,9 +1,9 @@
-package io.openems.edge.meter.opendtu;
+package io.openems.edge.opendtu.pvinverter;
 
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
-import io.openems.common.types.MeterType;
+//import io.openems.common.types.MeterType;
 import io.openems.edge.common.type.Phase.SinglePhase;
 
 @ObjectClassDefinition(name = "Meter OpenDTU", //
@@ -27,6 +27,12 @@ import io.openems.edge.common.type.Phase.SinglePhase;
 
 	@AttributeDefinition(name = "Inverter Serial Number", description = "Serial Number of the Inverter")
 	String serialNumber() default "";
+
+	@AttributeDefinition(name = "Username", description = "Username for Basic Authentication")
+	String username() default "admin";
+
+	@AttributeDefinition(name = "Password", description = "Password for Basic Authentication")
+	String password() default "";
 
 	String webconsole_configurationFactory_nameHint() default "Meter OpenDTU[{id}]";
 

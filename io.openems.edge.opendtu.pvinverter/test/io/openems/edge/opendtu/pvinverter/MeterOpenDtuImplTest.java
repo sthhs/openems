@@ -1,4 +1,4 @@
-package io.openems.edge.meter.opendtu;
+package io.openems.edge.opendtu.pvinverter;
 
 import static io.openems.common.types.MeterType.PRODUCTION;
 import static org.junit.Assert.assertEquals;
@@ -19,7 +19,7 @@ public class MeterOpenDtuImplTest {
 
 	@Test
 	public void test() throws Exception {
-		final var odtu = new MeterOpenDtuImpl();
+		final var odtu = new OpenDtuPvInverterImpl();
 		final var httpTestBundle = new DummyBridgeHttpBundle();
 		final var dummyCycleSubscriber = new DummyCycleSubscriber();
 		new ComponentTest(odtu) //

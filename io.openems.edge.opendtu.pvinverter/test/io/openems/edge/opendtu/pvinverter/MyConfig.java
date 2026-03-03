@@ -1,8 +1,9 @@
-package io.openems.edge.meter.opendtu;
+package io.openems.edge.opendtu.pvinverter;
 
 import io.openems.common.test.AbstractComponentConfig;
 import io.openems.common.types.MeterType;
 import io.openems.edge.common.type.Phase.SinglePhase;
+import io.openems.edge.opendtu.pvinverter.Config;
 
 @SuppressWarnings("all")
 public class MyConfig extends AbstractComponentConfig implements Config {
