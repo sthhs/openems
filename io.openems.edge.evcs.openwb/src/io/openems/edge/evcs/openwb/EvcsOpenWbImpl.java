@@ -20,6 +20,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 import io.openems.common.channel.AccessMode;
+import io.openems.common.exceptions.OpenemsException;
 import io.openems.common.types.MeterType;
 import io.openems.edge.bridge.mqtt.api.BridgeMqtt;
 import io.openems.edge.bridge.mqtt.api.BridgeMqtt.MqttSubscription;
@@ -30,8 +31,11 @@ import io.openems.edge.common.component.AbstractOpenemsComponent;
 import io.openems.edge.common.component.OpenemsComponent;
 import io.openems.edge.common.modbusslave.ModbusSlave;
 import io.openems.edge.common.modbusslave.ModbusSlaveTable;
+import io.openems.edge.evcs.api.ChargeStateHandler;
 import io.openems.edge.evcs.api.ChargingType;
 import io.openems.edge.evcs.api.Evcs;
+import io.openems.edge.evcs.api.EvcsPower;
+import io.openems.edge.evcs.api.ManagedEvcs;
 import io.openems.edge.evcs.api.Status;
 import io.openems.edge.meter.api.ElectricityMeter;
 import io.openems.edge.meter.api.PhaseRotation;
@@ -44,11 +48,12 @@ import io.openems.edge.timedata.api.TimedataProvider;
 		immediate = true, //
 		configurationPolicy = REQUIRE)
 public class EvcsOpenWbImpl extends AbstractOpenemsComponent
-		implements EvcsOpenWb, ElectricityMeter, OpenemsComponent, Evcs, TimedataProvider, ModbusSlave, MqttComponent {
+		implements EvcsOpenWb, ElectricityMeter, OpenemsComponent, Evcs, ManagedEvcs, TimedataProvider, ModbusSlave, MqttComponent {
 
 	private final Logger log = LoggerFactory.getLogger(EvcsOpenWbImpl.class);
 
 	private static final String TOPIC_PREFIX = "openWB/internal_chargepoint/";
+	private static final String TOPIC_SIMPLEAPI_PREFIX_SET = "openWB/simpleAPI/set/chargepoint/";
 
 	@Reference(policy = DYNAMIC, policyOption = GREEDY, cardinality = OPTIONAL)
 	private volatile Timedata timedata;
@@ -334,5 +339,65 @@ public class EvcsOpenWbImpl extends AbstractOpenemsComponent
 	@Override
 	public PhaseRotation getPhaseRotation() {
 		return this.config.phaseRotation();
+	}
+
+	@Override
+	public EvcsPower getEvcsPower() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public int getConfiguredMinimumHardwarePower() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getConfiguredMaximumHardwarePower() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public boolean getConfiguredDebugMode() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean applyChargePowerLimit(int power) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean pauseChargeProcess() throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean applyDisplayText(String text) throws OpenemsException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int getMinimumTimeTillChargingLimitTaken() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public ChargeStateHandler getChargeStateHandler() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void logDebug(String message) {
+		// TODO Auto-generated method stub
+		
 	}
 }
