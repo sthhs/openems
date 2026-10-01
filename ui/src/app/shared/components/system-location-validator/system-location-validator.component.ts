@@ -301,10 +301,8 @@ export class SystemLocationValidatorComponent implements OnInit {
         });
 
         this.isGeoFormVisible = options.length > 0;
-
-        if (this.isGeoFormVisible) {
-            this.geoCodeModel.index = defaultIndex;
-        }
+        this.geoCodeModel.index = this.isGeoFormVisible ? defaultIndex : null;
+        this.geoCodeForm.get("index")?.setValue(this.geoCodeModel.index);
     }
 
     private generateFields(): FormlyFieldConfig[] {
@@ -356,7 +354,7 @@ export class SystemLocationValidatorComponent implements OnInit {
             street === this.model.street.replaceAll(",", "") &&
             geo.postcode === this.model.zip &&
             geo.placeName === this.model.city &&
-            CountryUtils.fromCountryCode(geo.country ?? "") === this.model.country
+            CountryUtils.fromCountryCode(geo.countryCode ?? "") === this.model.country
         );
     }
 }

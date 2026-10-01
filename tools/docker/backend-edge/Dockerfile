@@ -1,4 +1,5 @@
 ARG JAVA_VERSION=21
+ARG JAVA_PACKAGE=jre
 
 ### Build backend binary
 FROM --platform=$BUILDPLATFORM eclipse-temurin:${JAVA_VERSION}-alpine AS build_backend
@@ -20,6 +21,7 @@ RUN --mount=type=bind,target=.,readwrite \
 FROM ghcr.io/linuxserver/baseimage-alpine:edge AS base_container
 
 ARG JAVA_VERSION
+ARG JAVA_PACKAGE
 
 RUN mkdir -p /etc/apk/keys && \
     wget -O /etc/apk/keys/adoptium.rsa.pub https://packages.adoptium.net/artifactory/api/security/keypair/public/repositories/apk && \
@@ -27,7 +29,8 @@ RUN mkdir -p /etc/apk/keys && \
     printf '%s\n' 'https://packages.adoptium.net/artifactory/apk/alpine/main' >> /etc/apk/repositories
 
 RUN apk add --update --no-cache \
-    temurin-${JAVA_VERSION}-jre rsync dos2unix
+    rsync dos2unix \
+    temurin-${JAVA_VERSION}-${JAVA_PACKAGE}
 
 ### Build backend container
 FROM base_container
@@ -36,6 +39,8 @@ COPY --from=build_backend --chown=abc:abc /opt/root/ /
 COPY --from=build_backend --chown=abc:abc /opt/openems-backend-edge.jar /opt/openems/openems-backend-edge.jar
 
 RUN find /etc/s6-overlay/ -type f -name 'run' -exec chmod +x {} \;
+
+ENV EXTRA_JVM_OPTS=""
 
 VOLUME /var/opt/openems/config
 VOLUME /var/opt/openems/data
