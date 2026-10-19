@@ -1,6 +1,7 @@
 package io.openems.edge.evse.chargepoint.openwb;
 
 import static io.openems.edge.common.channel.ChannelUtils.setValue;
+import static io.openems.edge.common.event.EdgeEventConstants.TOPIC_CYCLE_AFTER_PROCESS_IMAGE;
 import static org.osgi.service.component.annotations.ConfigurationPolicy.REQUIRE;
 import static org.osgi.service.component.annotations.ReferenceCardinality.MANDATORY;
 import static org.osgi.service.component.annotations.ReferenceCardinality.OPTIONAL;
@@ -13,6 +14,9 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventHandler;
+import org.osgi.service.event.propertytypes.EventTopics;
 import org.osgi.service.metatype.annotations.Designate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,14 +38,18 @@ import io.openems.edge.meter.api.ElectricityMeter;
 import io.openems.edge.meter.api.PhaseRotation;
 import io.openems.edge.timedata.api.Timedata;
 import io.openems.edge.timedata.api.TimedataProvider;
+import io.openems.edge.timedata.api.utils.CalculateEnergyFromPower;
 
 @Designate(ocd = Config.class, factory = true)
 @Component(//
 		name = "Evse.ChargePoint.OpenWB", //
 		immediate = true, //
 		configurationPolicy = REQUIRE)
-public class EvseOpenWbImpl extends AbstractOpenemsComponent
-		implements EvseOpenWb, EvseChargePoint, ElectricityMeter, OpenemsComponent, TimedataProvider, MqttComponent {
+@EventTopics({ //
+		TOPIC_CYCLE_AFTER_PROCESS_IMAGE //
+})
+public class EvseOpenWbImpl extends AbstractOpenemsComponent implements EvseOpenWb, EvseChargePoint, ElectricityMeter,
+		OpenemsComponent, TimedataProvider, MqttComponent, EventHandler {
 
 	private final Logger log = LoggerFactory.getLogger(EvseOpenWbImpl.class);
 
@@ -51,6 +59,18 @@ public class EvseOpenWbImpl extends AbstractOpenemsComponent
 	private volatile Timedata timedata;
 
 	private volatile BridgeMqtt mqttBridge;
+
+	/**
+	 * Calculates {@link ElectricityMeter.ChannelId#ACTIVE_PRODUCTION_ENERGY} by
+	 * integrating the locally measured {@code ActivePower} (the charge point
+	 * delivers energy towards the vehicle, tracked as production energy). The base
+	 * value is restored from Timedata on start, so the energy counter continues
+	 * where it left off instead of importing the absolute OpenWB meter reading
+	 * (which would otherwise appear as a one-time spike in the history on first
+	 * start, and would drop back on restart).
+	 */
+	private final CalculateEnergyFromPower calculateProductionEnergy = new CalculateEnergyFromPower(this,
+			ElectricityMeter.ChannelId.ACTIVE_PRODUCTION_ENERGY);
 
 	private Config config;
 	private String topicPrefix;
@@ -210,13 +230,11 @@ public class EvseOpenWbImpl extends AbstractOpenemsComponent
 	}
 
 	private void handleImported(JsonElement json) {
-		var energyTotal = Math.round(json.getAsFloat());
-
-		// The charge-point delivers energy towards the vehicle, so this is tracked as
-		// ActiveProductionEnergy - the same convention used by every other
-		// EvseChargePoint/Evcs implementation (e.g. CalculateEnergySession reads
-		// ActiveProductionEnergy as the source for a charging session's energy).
-		this._setActiveProductionEnergy((long) energyTotal);
+		// The 'imported' topic carries the charge point's absolute lifetime energy
+		// counter. It is intentionally NOT written to ActiveProductionEnergy: that
+		// channel is integrated from ActivePower in handleEvent() (see
+		// calculateProductionEnergy), so the device's pre-existing total is not
+		// imported into the history as a one-time spike and does not reset on restart.
 	}
 
 	private void handlePlugState(JsonElement json) {
@@ -291,6 +309,17 @@ public class EvseOpenWbImpl extends AbstractOpenemsComponent
 	@Override
 	public Timedata getTimedata() {
 		return this.timedata;
+	}
+
+	@Override
+	public void handleEvent(Event event) {
+		if (!this.isEnabled()) {
+			return;
+		}
+		switch (event.getTopic()) {
+		case TOPIC_CYCLE_AFTER_PROCESS_IMAGE -> //
+			this.calculateProductionEnergy.update(this.getActivePower().get());
+		}
 	}
 
 	@Override
