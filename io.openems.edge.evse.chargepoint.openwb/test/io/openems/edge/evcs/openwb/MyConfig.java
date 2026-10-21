@@ -1,6 +1,7 @@
 package io.openems.edge.evcs.openwb;
 
 import io.openems.common.test.AbstractComponentConfig;
+import io.openems.edge.evse.chargepoint.openwb.common.ChargePoint;
 import io.openems.edge.meter.api.PhaseRotation;
 
 @SuppressWarnings("all")

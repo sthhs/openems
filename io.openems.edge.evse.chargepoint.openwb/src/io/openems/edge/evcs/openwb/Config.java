@@ -3,6 +3,7 @@ package io.openems.edge.evcs.openwb;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
+import io.openems.edge.evse.chargepoint.openwb.common.ChargePoint;
 import io.openems.edge.meter.api.PhaseRotation;
 
 @ObjectClassDefinition(//

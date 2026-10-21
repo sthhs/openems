@@ -9,6 +9,7 @@ import io.openems.edge.common.test.AbstractComponentTest.TestCase;
 import io.openems.edge.common.test.ComponentTest;
 import io.openems.edge.evcs.api.Evcs;
 import io.openems.edge.evcs.api.Status;
+import io.openems.edge.evse.chargepoint.openwb.common.ChargePoint;
 import io.openems.edge.meter.api.ElectricityMeter;
 
 public class EvcsOpenWbImplTest {
@@ -86,10 +87,12 @@ public class EvcsOpenWbImplTest {
 						.output(Evcs.ChannelId.STATUS, Status.CHARGING)) //
 				.next(new TestCase() //
 						.onBeforeProcessImage(() -> {
-							// Simulate energy imported
+							// The absolute 'imported' meter reading must NOT be passed through to the
+							// energy channel; energy is integrated from power into
+							// ACTIVE_PRODUCTION_ENERGY instead.
 							mqttBridge.simulateMessage("openWB/internal_chargepoint/0/get/imported", "12345678");
 						}) //
-						.output(ElectricityMeter.ChannelId.ACTIVE_CONSUMPTION_ENERGY, 12345678L)) //
+						.output(ElectricityMeter.ChannelId.ACTIVE_PRODUCTION_ENERGY, null)) //
 				.deactivate();
 	}
 

@@ -3,6 +3,7 @@ package io.openems.edge.evse.chargepoint.openwb;
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
+import io.openems.edge.evse.chargepoint.openwb.common.ChargePoint;
 import io.openems.edge.meter.api.PhaseRotation;
 
 @ObjectClassDefinition(//
@@ -18,9 +19,6 @@ import io.openems.edge.meter.api.PhaseRotation;
 
 	@AttributeDefinition(name = "Is enabled?", description = "Is this Component enabled?")
 	boolean enabled() default true;
-
-	@AttributeDefinition(name = "Read only", description = "The OpenWB internal chargepoint currently has no 'set' topics, so this is always read only.")
-	boolean readOnly() default true;
 
 	@AttributeDefinition(name = "MQTT Bridge ID", description = "ID of the MQTT Bridge component (e.g., mqtt0)")
 	String mqttBridgeId() default "mqtt0";
