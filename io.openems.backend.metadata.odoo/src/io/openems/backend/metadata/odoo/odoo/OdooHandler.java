@@ -6,6 +6,7 @@ import static io.openems.backend.metadata.odoo.odoo.OdooUtils.getAs;
 import static io.openems.backend.metadata.odoo.odoo.OdooUtils.getAsEnum;
 import static io.openems.backend.metadata.odoo.odoo.OdooUtils.getAsOptional;
 import static io.openems.backend.metadata.odoo.odoo.OdooUtils.getAsOrElse;
+import static io.openems.common.utils.FunctionUtils.doNothing;
 import static io.openems.common.utils.JsonUtils.buildJsonObject;
 import static io.openems.common.utils.JsonUtils.getAsJsonElement;
 import static io.openems.common.utils.JsonUtils.getAsJsonObject;
@@ -435,6 +436,28 @@ public class OdooHandler {
 	}
 
 	/**
+	 * Gets the Edge-ID referenced by a stored setup protocol.
+	 *
+	 * @param setupProtocolId the Odoo setup protocol id
+	 * @return the referenced edge's name
+	 * @throws OpenemsNamedException if the protocol or its edge reference is
+	 *                               invalid
+	 */
+	public String getEdgeIdForSetupProtocol(int setupProtocolId) throws OpenemsNamedException {
+		final var protocol = OdooUtils.readOne(this.credentials, Field.SetupProtocol.ODOO_MODEL, setupProtocolId,
+				Field.SetupProtocol.EDGE);
+		final var odooEdgeId = OdooUtils.getOdooReferenceId(protocol.get(Field.SetupProtocol.EDGE.id()))
+				.filter(id -> id > 0)
+				.orElseThrow(() -> new OpenemsException("Setup protocol has no valid edge reference"));
+		final var edge = OdooUtils.readOne(this.credentials, Field.EdgeDevice.ODOO_MODEL, odooEdgeId,
+				Field.EdgeDevice.NAME);
+		if (!(edge.get(Field.EdgeDevice.NAME.id()) instanceof String edgeId) || edgeId.isBlank()) {
+			throw new OpenemsException("Referenced edge has no valid name");
+		}
+		return edgeId;
+	}
+
+	/**
 	 * Returns the Odoo report for a setup protocol.
 	 *
 	 * @param setupProtocolId the Odoo setup protocol id
@@ -747,19 +770,19 @@ public class OdooHandler {
 						.build()) //
 				.build();
 
-		return this.executeAdminRequest(session -> {
-			return this.executor.submit("updateEdgeSettings", () -> {
-				try {
-					return getAsJsonObject(
-							OdooUtils.sendJsonrpcRequest(this.credentials.url() + "/openems_backend/set_edge_settings",
+		return this //
+				.executeAdminRequest(session -> {
+					return this.executor.submit("updateEdgeSettings", () -> {
+						try {
+							return getAsJsonObject(OdooUtils.sendJsonrpcRequest(
+									this.credentials.url() + "/openems_backend/set_edge_settings",
 									"session_id=" + session, request).result);
-				} catch (OpenemsNamedException e) {
-					throw new RuntimeException(e);
-				}
-			});
-		}).thenAccept(_ -> {
-			// empty
-		});
+						} catch (OpenemsNamedException e) {
+							throw new RuntimeException(e);
+						}
+					});
+				}) //
+				.thenAccept(_ -> doNothing());
 	}
 
 	private record StockLot(String category, String name, String serialNumber) {
@@ -1004,6 +1027,15 @@ public class OdooHandler {
 	 * @throws OpenemsNamedException on error
 	 */
 	public void registerUser(JsonObject jsonObject, OdooUserRole role, String oem) throws OpenemsNamedException {
+		switch (role) {
+		case INSTALLER, OWNER, GUEST -> doNothing();
+		case ADMIN -> {
+			// Security: ADMIN users cannot be created here
+			this.log.warn("Rejected registerUser attempt with ADMIN role: json={}", JsonUtils.hidePassword(jsonObject));
+			throw new OpenemsException("Role [admin] is not allowed for self-registration");
+		}
+		}
+
 		var emailOpt = getAsOptionalString(jsonObject, "email");
 		if (!emailOpt.isPresent()) {
 			throw new OpenemsException("No email specified");
